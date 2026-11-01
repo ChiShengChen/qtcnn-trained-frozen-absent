@@ -1,0 +1,47 @@
+\begin{table}[t]
+\centering
+\caption{The first (September 2026) and the reproducible (November 2026) run of every network condition that was re-run: pooled-track annualised Sharpe ratio of each, and the correlation between the two runs' per-cell Sharpe ratios (not given for the five-cell holdout). The last line of each panel is the trained-minus-frozen pooled Sharpe difference with its paired standard error and the two one-sided test against a 0.03 margin.}
+\label{tab:rerun}
+\small
+\begin{tabular}{lrrr}
+\toprule
+Condition & September & November & Cell corr. \\
+\midrule
+\multicolumn{4}{l}{\emph{JPX walk-forward}} \\
+\quad trained circuit & $-0.07$ & $-0.09$ & 0.78 \\
+\quad frozen circuit & $-0.07$ & $-0.10$ & 0.78 \\
+\quad classical surrogate & $-0.04$ & $-0.22$ & 0.79 \\
+\quad no circuit & $+0.01$ & $-0.01$ & 0.44 \\
+\quad circuit only & $-0.25$ & $-0.12$ & 0.82 \\
+\quad TCN baseline & $-0.24$ & $-0.08$ & 0.53 \\
+\quad LSTM baseline & $-0.33$ & $-0.50$ & 0.81 \\
+\quad Transformer baseline & $-0.14$ & $+0.11$ & 0.55 \\
+\quad MLP baseline & $-0.15$ & $-0.18$ & 0.57 \\
+\quad trained $-$ frozen (s.e.) & \multicolumn{3}{l}{Sept.\ $-0.001$ (0.0072), $p_{0.03}<0.001$; Nov.\ $+0.008$ (0.0075), $p_{0.03}=0.0055$} \\[2pt]
+\multicolumn{4}{l}{\emph{JPX, full budget}} \\
+\quad trained circuit & $-0.17$ & $-0.11$ & 0.47 \\
+\quad frozen circuit & $-0.17$ & $-0.11$ & 0.51 \\
+\quad trained $-$ frozen (s.e.) & \multicolumn{3}{l}{Sept.\ $-0.006$ (0.0090), $p_{0.03}=0.0085$; Nov.\ $+0.000$ (0.0432), $p_{0.03}=0.243$} \\[2pt]
+\multicolumn{4}{l}{\emph{US walk-forward}} \\
+\quad trained circuit & $-1.44$ & $-1.46$ & 0.71 \\
+\quad frozen circuit & $-1.43$ & $-1.46$ & 0.72 \\
+\quad classical surrogate & $-1.24$ & $-1.49$ & 0.46 \\
+\quad no circuit & $-1.24$ & $-1.44$ & 0.71 \\
+\quad TCN baseline & $-1.51$ & $-2.03$ & 0.58 \\
+\quad LSTM baseline & $-0.85$ & $-0.66$ & 0.61 \\
+\quad Transformer baseline & $-0.84$ & $-1.16$ & 0.40 \\
+\quad MLP baseline & $-0.83$ & $-1.56$ & 0.74 \\
+\quad trained $-$ frozen (s.e.) & \multicolumn{3}{l}{Sept.\ $-0.005$ (0.0075), $p_{0.03}<0.001$; Nov.\ $-0.002$ (0.0073), $p_{0.03}<0.001$} \\[2pt]
+\multicolumn{4}{l}{\emph{Holdout}} \\
+\quad trained circuit & $+1.54$ & $+1.49$ & -- \\
+\quad frozen circuit & $+1.53$ & $+1.51$ & -- \\
+\quad classical surrogate & $+1.70$ & $+1.57$ & -- \\
+\quad no circuit & $+1.12$ & $+1.83$ & -- \\
+\quad TCN baseline & $+0.72$ & $+1.37$ & -- \\
+\quad LSTM baseline & $+1.60$ & $+0.67$ & -- \\
+\quad Transformer baseline & $+2.34$ & $+0.68$ & -- \\
+\quad MLP baseline & $-0.31$ & $+0.42$ & -- \\
+\quad trained $-$ frozen (s.e.) & \multicolumn{3}{l}{Sept.\ $+0.018$ (0.0177), $p_{0.03}=0.255$; Nov.\ $-0.022$ (0.0269), $p_{0.03}=0.357$} \\[2pt]
+\bottomrule
+\end{tabular}
+\end{table}

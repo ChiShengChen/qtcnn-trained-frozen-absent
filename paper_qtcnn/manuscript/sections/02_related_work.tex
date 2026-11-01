@@ -3,9 +3,8 @@
 
 \paragraph{Quantum machine learning for financial prediction.}
 Reports of quantum models for forecasting and stock selection range from
-clear positives on synthetic data --- a 96-parameter circuit matching
-thousands-parameter BiLSTMs on noisy sinusoids \citep{emmanoulopoulos2022quantum}
---- to mixed results on market data: a hybrid network beats a parameter-matched
+clear positives on synthetic data (a 96-parameter circuit matching
+thousands-parameter BiLSTMs on noisy sinusoids \citep{emmanoulopoulos2022quantum}) to mixed results on market data: a hybrid network beats a parameter-matched
 ANN on directional classification of single stocks, yet its recurrent variant
 wins on risk-adjusted returns in only two of four S\&P~500 regimes under
 identical walk-forward splits \citep{ahmad2026quantum}; on OHLCV data no
@@ -19,10 +18,10 @@ network is inferior to its classical counterpart over the whole period
 subsamples, solver and tuning budget fixed finds the fidelity quantum kernel
 indistinguishable from an RBF control ($\Delta\mathrm{IC}=+0.005$, $p=0.42$)
 over 170 walk-forward windows, with no pairwise difference among eleven models
-surviving family-wise correction --- and shows that a 60-window evaluation on a
+surviving family-wise correction, and shows that a 60-window evaluation on a
 hindsight-screened universe makes the same kernel look dominant
-\citep{shen2026quantum}. That paper's diagnosis of the applied literature ---
-short samples, hindsight universes, weak baselines --- and its proposed
+\citep{shen2026quantum}. That paper's diagnosis of the applied literature
+(short samples, hindsight universes, weak baselines) and its proposed
 standards (kernel-swap controls, budget-equalised comparisons, point-in-time
 universes, multiplicity-robust inference) are the ones our protocol adopts. The
 reference QTCNN study we audit \citep{chen2025quantumb} reports an annualised
@@ -79,11 +78,10 @@ protocols that match trainable parameters and optimisation steps find shallow
 hybrids matching classical performance at much higher cost
 \citep{bendouma2026fair}, whereas a same-accuracy-threshold comparison reports
 hybrids scaling FLOPs more efficiently \citep{kashif2024computational}. The
-attribution audit of \citet{gillani2026quantum} --- parameter-matched classical
+attribution audit of \citet{gillani2026quantum} (parameter-matched classical
 controls sharing the identical front-end, a random-feature kernel, a
 regularisation sweep, three to five seeds with confidence intervals, and the
-explicit stance that the benchmark's value does not depend on quantum winning
---- is the closest methodological template to ours; the capacity-matched
+explicit stance that the benchmark's value does not depend on quantum winning) is the closest methodological template to ours; the capacity-matched
 bottleneck of \citet{chen2025quantumd} follows the same commitment. Shot
 budgets are the operative hardware cost, since access is priced per shot
 \citep{liu2025you} and gradient estimation needs two circuit runs per parameter
@@ -102,10 +100,10 @@ produces significant backtests under martingale-difference nulls, and effective
 multiplicity rather than the nominal specification count sets the expected
 in-sample maximum \citep{nikolopoulos2026spurious}; publication selects for
 author and sampling error alike \citep{chen2022publication}. Multiple-testing
-control in the cross-section is contested in magnitude --- 93\% of
+control in the cross-section is contested in magnitude (93\% of
 trading-friction anomalies fail replication and microcaps drive equal-weighted
 results in \citet{hou2020replicating}, while a Bayesian replication finds the
-majority of factors survive \citep{jensen2021there} --- but not in principle,
+majority of factors survive \citep{jensen2021there}) but not in principle,
 which is why we apply Romano--Wolf step-down control \citep{romano2005stepwise}
 across every contrast. Leakage inflates out-of-sample performance while
 preserving the appearance of rigour \citep{bhand2026illusion}; a one-switch

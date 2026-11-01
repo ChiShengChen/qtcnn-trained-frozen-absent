@@ -32,10 +32,10 @@ epochs, batches of \num{512}, gradient norm clipped at \num{1}, binary
 cross-entropy on the extreme labels, and a random subsample of \num{60000}
 labelled sequences per fold drawn by the seed. Early stopping monitors the
 validation AUC with a patience of six epochs and restores the best weights; on
-the walk-forward folds it halts after \num{9.9} epochs on average. Because that
-could be read as never giving the circuit time to matter, both circuit
-conditions are also run with early stopping disabled, for the full
-\num{30} epochs (Section~\ref{sec:results:ablation}).
+the walk-forward folds it halts after \num{9.1} epochs on average for the
+circuit conditions. Because that could be read as never giving the circuit time
+to matter, both circuit conditions are also run for the full \num{30} epochs
+and scored on the last epoch's weights (Section~\ref{sec:results:ablation}).
 
 \subsection{Portfolio construction}
 Model outputs are standardised within each trading date, restricted to names
@@ -64,11 +64,20 @@ have found at \SI{80}{\percent} power given its standard error. Equivalence is
 assessed by two one-sided tests against a stated
 margin~\citep{schuirmann1987comparison}, applied to the paired bootstrap
 distribution of the Sharpe difference; a significant result there is positive
-evidence that the difference lies inside the margin. We pre-specify a margin of
-\num{0.03} annualised Sharpe for the trained-versus-frozen contrast, which is
-the comparison the design is powered to resolve, and report the wider margins
-the other contrasts require rather than claiming equivalence at a margin the
-data cannot support.
+evidence that the difference lies inside the margin. The margin of \num{0.03}
+annualised Sharpe used for the trained-versus-frozen contrast was not fixed in
+advance. The equivalence analysis entered the protocol after the walk-forward
+results were in, when the pooled-track Sharpe correlation we had first reported
+as the headline turned out to be location-invariant and therefore uninformative,
+and \num{0.03} was chosen at that point as the smallest round margin the paired
+standard error (\num{0.007}, minimum detectable effect \num{0.02}) could
+resolve. A margin fixed with the standard error in view is a weaker commitment
+than one fixed before the data, so the difference and its standard error are
+always printed beside the verdict, letting the reader apply any margin, and the
+contrasts the design resolves less finely are reported at the wider margins they
+require (\num{0.25} and \num{0.50}) rather than at one the data cannot support.
+Section~\ref{sec:protocol:changes} lists every change made to the analysis after
+results were seen.
 
 Two further statistics guard against the selection bias that a study comparing
 several model variants necessarily incurs. The Deflated Sharpe
@@ -101,7 +110,7 @@ The information coefficient is a rank correlation over the whole
 cross-section, whereas the long/short book holds only the two tails. The two
 can therefore disagree, and on this dataset they do: in the reference
 implementation the model with the lowest IC has the highest Sharpe
-(Section~\ref{sec:results}). We therefore report decile portfolios --- the mean
+(Section~\ref{sec:results}). We therefore report decile portfolios: the mean
 forward return of each score decile with Newey--West $t$-statistics, the
 top-minus-bottom spread, and the Spearman correlation between decile index and
 mean return as a monotonicity measure. A signal with a high IC but low
@@ -119,6 +128,71 @@ book: on the reference implementation's own output, turnover averages 24\% per
 day and the break-even cost is \SI{7.4}{bps}.
 
 \subsection{Locked holdout}
+\label{sec:protocol:holdout}
 The supplemental window, 2021-12-06 to 2022-06-24 (\num{135} trading days), is
-evaluated exactly once, after every architectural and hyperparameter decision is
-frozen. It spans a market regime absent from the development period.
+evaluated once per condition, after that condition's architectural and
+hyperparameter decisions are frozen. It was opened three times: in September
+2026 for the eight network conditions; in October 2026 for the LightGBM
+baseline, added to the study after the first opening; and in November 2026,
+when the eight network conditions were re-run on it, unchanged, under the
+released code, because the September run had been made with an uncommitted
+state of the code and could not be reproduced
+(Section~\ref{sec:protocol:changes}). No condition's design was altered at any
+opening. The tables report the third opening, which anyone can reproduce, and
+Appendix~\ref{sec:app:rerun} reports the first beside it. The circuit-only
+conditions and the second ansatz family were never run on the window, which
+spans a market regime absent from the development period.
+
+\subsection{Changes made after results were seen}
+\label{sec:protocol:changes}
+A protocol section that reads as if everything had been fixed in advance would
+overstate this study's discipline. The following were changed after
+walk-forward results existed, and each is reported in full rather than
+replaced.
+\begin{enumerate}
+  \item The trained-versus-frozen headline was changed from a pooled-track
+    Sharpe correlation to the equivalence test above, and the \num{0.03} margin
+    was chosen with the standard error in view (September 2026).
+  \item Four inference defects were corrected: the bootstrap null is now imposed
+    on demeaned returns rather than by re-centring Sharpe draws; Sharpe
+    differences are tested as such by a paired bootstrap, not only through the
+    Diebold--Mariano test on mean returns; the Harvey--Leybourne--Newbold
+    small-sample correction and a $t$ reference are used for Diebold--Mariano;
+    and the Romano--Wolf family is stated explicitly. At the time, the only
+    verdict that changed was that three US conditions became significantly
+    negative.
+  \item The dispersion term in the Deflated Sharpe Ratio was changed from the
+    sampling standard error $1/\sqrt{n}$ to the empirical standard deviation of
+    the \num{55} trial Sharpe ratios, which is the quantity the expected-maximum
+    formula of \citet{bailey2014deflated} takes. Every DSR in this paper uses the
+    latter; on the first run the former gave far smaller values (\num{0.012}
+    rather than \num{0.17} for the best walk-forward condition) and the same
+    verdict.
+  \item The shot budget was re-measured at the input distribution the deployed
+    model produces, and then on the trained encoders rather than on an
+    initialised one (Section~\ref{sec:results:diagnostics}).
+  \item Conditions were added after the first results: the circuit-only pair,
+    the no-early-stopping control, the second ansatz family and the LightGBM
+    baseline. All are reported; none was removed. The multiplicity corrections
+    count every configuration run.
+  \item Every network result in the paper was regenerated in November 2026
+    with the released code: both walk-forward panels, the circuit-only
+    condition, the full-budget control and the holdout. The September runs had
+    been made from working copies of the code that were never committed. The
+    committed code is
+    deterministic, in that repeated runs of a cell are bit-for-bit identical at
+    one and at four threads, yet it reproduced none of the September cells;
+    on the two walk-forward panels, per-cell Sharpe ratios correlate at
+    \numrange{0.40}{0.82} between the two runs of the same condition, while the trained and frozen circuits within
+    either run still agree to \num{0.999}. Appendix~\ref{sec:app:rerun}
+    compares the two runs condition by condition. Every conclusion survived;
+    the numbers in this paper are the reproducible ones.
+  \item The full-budget control (Section~\ref{sec:results:ablation}) trained
+    for 30 epochs but, in the released code, then restored the
+    best-validation weights, which made it bit-for-bit identical to the
+    early-stopped run. It now scores the weights of the last epoch, as the
+    September run had.
+  \item The locked holdout was opened a second time for the LightGBM baseline
+    and a third time for the reproducible rerun
+    (Section~\ref{sec:protocol:holdout}).
+\end{enumerate}

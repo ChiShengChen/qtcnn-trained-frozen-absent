@@ -257,6 +257,7 @@ def build_model(name: str, n_features: int, seq_len: int = 20, seed: int = 0, **
             "qtcnn_surrogate": QuantumMode.SURROGATE,
             "qtcnn_noquantum": QuantumMode.NONE,
             "qtcnn_quantumonly": QuantumMode.TRAINED,
+            "qtcnn_quantumonly_frozen": QuantumMode.FROZEN,
         }[name]
         circuit = CircuitConfig(
             n_qubits=kwargs.pop("n_qubits", 8),
@@ -271,7 +272,7 @@ def build_model(name: str, n_features: int, seq_len: int = 20, seed: int = 0, **
             encoder=kwargs.pop("encoder", "tcn"),
             circuit=circuit,
             quantum_mode=mode,
-            head_sees_encoder=(name != "qtcnn_quantumonly"),
+            head_sees_encoder=not name.startswith("qtcnn_quantumonly"),
             seed=seed,
             **kwargs,
         )
@@ -298,6 +299,7 @@ MODEL_NAMES = [
     "qtcnn_surrogate",
     "qtcnn_noquantum",
     "qtcnn_quantumonly",
+    "qtcnn_quantumonly_frozen",
     "tcn",
     "lstm",
     "transformer",

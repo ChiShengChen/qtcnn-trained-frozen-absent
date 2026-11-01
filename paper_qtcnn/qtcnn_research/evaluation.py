@@ -286,6 +286,7 @@ def deflated_sharpe_ratio(
     z = (sr - e_max) * np.sqrt(n - 1) / denom
     return {
         "dsr": float(stats.norm.cdf(z)),
+        "trial_sd_ann": float(trial_sharpe_std * np.sqrt(periods)),
         "sr_observed_ann": sr * np.sqrt(periods),
         "sr_zero_ann": float(e_max * np.sqrt(periods)),
         "skew": skew,
@@ -642,8 +643,16 @@ def evaluate_strategy(
     seed: int = 0,
     periods: int = TRADING_DAYS,
     bootstrap: int = 2000,
+    trial_sharpe_std: Optional[float] = None,
 ) -> PerformanceReport:
-    """Full metric block for one model on one out-of-sample window."""
+    """Full metric block for one model on one out-of-sample window.
+
+    ``trial_sharpe_std`` is the per-period standard deviation of the Sharpe
+    ratios across the ``n_trials`` configurations searched, which is what Bailey
+    and Lopez de Prado's expected-maximum formula takes. When it is not supplied
+    the sampling standard error ``1/sqrt(n)`` is used instead, which treats the
+    trials as noise around a common zero and is the weaker correction.
+    """
     r = pd.Series(daily_returns, dtype=float).dropna().sort_index()
     metrics: Dict[str, float] = {
         "sharpe_ann": annualised_sharpe(r, periods),
@@ -658,7 +667,8 @@ def evaluate_strategy(
                     bootstrap_sharpe_ci(r, n_boot=bootstrap, seed=seed, periods=periods).items()
                     if k != "sharpe"})
     metrics.update({f"dsr_{k}": v for k, v in
-                    deflated_sharpe_ratio(r, n_trials=n_trials, periods=periods).items()})
+                    deflated_sharpe_ratio(r, n_trials=n_trials, periods=periods,
+                                          trial_sharpe_std=trial_sharpe_std).items()})
 
     if scored is not None and not scored.empty:
         ic = daily_ic(scored)

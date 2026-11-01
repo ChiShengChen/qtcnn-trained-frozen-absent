@@ -58,6 +58,11 @@ class TrainConfig:
     lr: float = 1e-3
     weight_decay: float = 1e-4
     patience: int = 6            # early stopping on validation AUC
+    # Restore the weights of the best validation epoch when training ends. The
+    # full-budget control sets this False so the model scored is the one the
+    # last epoch produced; with it True, a larger patience changes nothing
+    # unless a later epoch beats the best one.
+    restore_best: bool = True
     max_train_samples: int = 60_000
     grad_clip: float = 1.0
     device: str = "cpu"
@@ -143,7 +148,7 @@ def train_model(
         if stale >= cfg.patience:
             break
 
-    if best_state is not None:
+    if best_state is not None and cfg.restore_best:
         model.load_state_dict(best_state)
     model.eval()
 
@@ -226,6 +231,7 @@ class FoldResult:
     scored: pd.DataFrame
     selection: pd.DataFrame
     train_info: Dict[str, object]
+    state: Optional[Dict[str, torch.Tensor]] = None  # trained weights, for post-hoc diagnostics
 
     def metrics(self, n_trials: int = 1) -> Dict[str, object]:
         report = ev.evaluate_strategy(
@@ -350,4 +356,5 @@ def run_fold(
         model=model_name, fold=data.fold.fold, seed=seed, daily_returns=daily,
         scored=scored[["Date", "SecuritiesCode", "score", "Target"]],
         selection=selection, train_info=info,
+        state={k: v.detach().cpu().clone() for k, v in model.state_dict().items()},
     )

@@ -82,11 +82,12 @@ several long-running jobs. So:
       a fifth fold would need 1205 dev days and only 1161 exist)
 - [x] Batched quantum layer and ablation conditions
 - [x] Tier 0: 8 conditions x 4 folds x 5 seeds, 500 OOS days -- no condition beats zero or the no-circuit control; trained == frozen
-- [x] Tier 1: no barren plateau to 12 qubits; rank robust to gate noise; 256 shots for 0.99 rank corr
-- [x] Tier 2: spanning regression (R^2 0.94, no alpha); extension fetched; its 207 missing names all matched to JPX delisting lists (204 acquisitions) — `scripts_data/delisting_audit.py`, F25
-- [x] Locked holdout, 135 days, evaluated once: ablation replicates (trained == frozen, surrogate best), nothing survives RW/DSR/10 bps
+- [x] Tier 1: no barren plateau to 12 qubits; rank robust to gate noise; shot budget on the trained cells: 8192 shots for 0.99 rank corr at the median cell, >131072 at the narrowest (F37, F40)
+- [x] Tier 2: spanning regression (R^2 0.91, no alpha; `scripts_data/spanning.py`); extension fetched; its 207 missing names all matched to JPX delisting lists (204 acquisitions) — `scripts_data/delisting_audit.py`, F25
+- [x] Locked holdout, 135 days, opened three times (Sept networks, Oct LightGBM, Nov reproducible rerun): ablation replicates (trained == frozen), nothing survives RW/DSR/10 bps
 - [x] Manuscript: all sections written; intro & related work built from the verified literature corpus (`literature/report.md`, 216 cards, 51 papers); builds to 18 pages, 0 errors
 - [x] Second market (US, 2000 equities, 625 OOS days): rerun after the price-floor fix; all eight conditions negative, nothing significant, equivalence replicates at the 0.03 margin (F28, F32, F33)
 - [x] Ablation restated as an equivalence test (TOST + minimum detectable effect), `qtcnn_research/equivalence.py`, 4 calibration tests (F33)
+- [x] Six-reviewer pass (F40) and reproducible rerun of every network result with the committed code (F41); September runs archived in `results/*_2026-09_original/`
 - [x] Circuit-only, no-early-stopping and LightGBM conditions reported (F38); second ansatz family run and reported with its looser equivalence bound (F39); abstract at ~350 words; 27 pages
 - [x] Literature search (paper-deep-search): 35 queries + 2 snowball rounds, 2107 ledger rows, 471 included, saturation reached; `manuscript/refs_generated.bib` generated from ledger metadata only

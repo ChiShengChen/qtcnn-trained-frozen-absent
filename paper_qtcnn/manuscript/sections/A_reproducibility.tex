@@ -3,7 +3,7 @@
 
 \subsection{Software and hardware}
 Experiments ran on a 24-core workstation shared with unrelated jobs, under
-PennyLane 0.42.3, PyTorch 2.6.0, NumPy 1.26.4 and pandas 2.2.3 on Python
+PennyLane 0.42.3, PyTorch 2.6.0, NumPy 2.2.6, pandas 2.2.3 and LightGBM 4.7.0 on Python
 3.12.9. Quantum circuits were simulated on the \texttt{default.qubit}
 state-vector backend with backpropagation. All reported models are trained on
 CPU: for an eight-qubit register the simulator is CPU-bound, and a GPU gives no
@@ -29,14 +29,14 @@ completed work and without changing any seed.
 The dataset is the public JPX Tokyo Stock Exchange
 panel~\citep{jpx2022competition}. The analysis code, including the evaluation
 statistics, the walk-forward protocol and the batched circuit, is released with
-the paper. The calibration checks reported in
-Section~\ref{sec:protocol:stats} --- in particular that the
+the paper at \url{https://github.com/ChiShengChen/qtcnn-trained-frozen-absent}. The calibration checks reported in
+Section~\ref{sec:protocol:stats} (in particular that the
 backtest-overfitting estimator returns \num{0.53(4)} on independent random
-strategies --- are part of the test suite.
+strategies) are part of the test suite.
 
 \subsection{Deviations from the reference implementation}
-The pipeline this work audits --- our own, as stated in
-Section~\ref{sec:intro} --- differs in four respects that materially affect its
+The pipeline this work audits (our own, as stated in
+Section~\ref{sec:intro}) differs in four respects that materially affect its
 numbers, each corrected here: the split adjustment direction
 (Section~\ref{sec:data:adjustment}); the Sharpe ratio, which the released code
 computes as mean over standard deviation with no annualisation, though the
@@ -45,3 +45,43 @@ which date subsampling reduced to \num{22} trading days; and the absence of
 transaction costs. Section~\ref{sec:results:reeval} reports the original models
 re-scored over \num{241} days with all four corrected, so that the difference
 is attributable rather than asserted.
+
+\subsection{The first runs and the reproducible rerun}
+\label{sec:app:rerun}
+The network results first reported for this study were produced between 6 and
+25 September 2026 from working copies of the code that were never committed. When trained weights
+were needed for the shot-budget measurement of Section~\ref{sec:results:diagnostics},
+re-training a cell with the committed code gave a different model. The
+committed code is deterministic: the same cell, trained five times at one
+and at four threads, was bit-for-bit identical every time, and the second
+ansatz family, first run in October with committed code, reproduces exactly.
+The first committed version of the code, from 12 September, gives the same
+cell bit-for-bit as the released one, so no committed change altered training.
+The September working copies differed from every commit in ways that were not
+recorded; the full-budget control of 25 September, for one, scored final-epoch
+weights, which no committed version ever did. Every network condition run in September was therefore
+re-run with the released code, and the paper reports the rerun.
+Table~\ref{tab:rerun} sets the two side by side.
+
+\input{tables/rerun}
+
+The two runs of a condition agree in the aggregate and disagree cell by cell.
+On the walk-forward panels per-cell Sharpe ratios correlate at
+\numrange{0.40}{0.82} between runs, and pooled Sharpe ratios differ by up to
+\num{0.25} on the Tokyo panel, \num{0.73} on the US panel and \num{1.66} on the
+\num{135}-day holdout. That is the size of the training-path variation
+Section~\ref{sec:results:seeds} documents across seeds, and it is a second
+demonstration of the same point: on this task the training draw moves a
+condition's Sharpe ratio by more than any architectural choice does. What
+depends on the run is therefore the ordering of conditions and the level of any
+one of them: the transformer is first on the holdout in one run and sixth in
+the other, three US conditions are significantly negative in one and five in
+the other, and the single condition with a positive gross walk-forward return
+is the no-circuit control in one and the transformer in the other. What does
+not depend on it is every contrast the paper rests on. In both runs, on both
+markets, the trained and frozen circuits are equivalent inside \num{0.03}
+Sharpe, their per-cell Sharpe ratios correlate above \num{0.999}, no condition
+on the Tokyo walk-forward is distinguishable from zero, no contrast against the
+no-circuit control survives multiplicity correction on any panel, and on the
+holdout the two circuit conditions differ by \num{0.02}. The September files are
+kept in the repository beside the rerun.

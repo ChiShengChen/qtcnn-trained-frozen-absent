@@ -53,7 +53,7 @@ ABLATION=(qtcnn_trained qtcnn_frozen qtcnn_surrogate qtcnn_noquantum tcn)
 #
 # n_trials is fixed at 25 = 5 conditions x 5 seeds for every job, so the
 # Deflated Sharpe Ratio is deflated by the whole study rather than one slice.
-N_TRIALS=25
+N_TRIALS=55   # eleven conditions x five seeds; aggregate.py is also run with --n-trials 55
 
 stage_tier0() {
   # The two expensive conditions: gradients flow through the circuit.
@@ -74,11 +74,13 @@ stage_tier0_controls() {
 }
 
 stage_baselines() {
-  # Classical references; these are the only stage that benefits from the GPU.
-  gq_run qtcnn-baselines -g 4G -c "$THREADS" -m 12 -- \
+  # Classical references. Run on the CPU like everything else: the reported
+  # numbers come from CPU training, which is bit-for-bit reproducible; GPU
+  # kernels are not, and would give different cells (add --gpu only for speed).
+  gq_run qtcnn-baselines --cpu-only -c "$THREADS" -m 12 -- \
     $PY -u -m qtcnn_research.run_experiment \
       --models lstm transformer mlp --seeds 0 1 2 3 4 \
-      --epochs 30 --max-train 60000 --gpu --n-trials "$N_TRIALS" "${COMMON[@]}" \
+      --epochs 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
       --tag baselines --out results/walkforward
 }
 
@@ -90,11 +92,12 @@ stage_diagnostics() {
 }
 
 stage_holdout() {
-  # The locked window, 2021-12-06 to 2022-06-24. Run once, after every design
-  # decision is frozen. Re-running it after seeing the result invalidates it.
+  # The locked window, 2021-12-06 to 2022-06-24, for the eight network conditions
+  # (LightGBM: stage holdout_lightgbm). Opened three times; see the protocol
+  # section. Re-running it reproduces the reported cells exactly.
   gq_run qtcnn-holdout --cpu-only -c "$THREADS" -m 12 -- \
     $PY -u -m qtcnn_research.run_experiment --holdout \
-      --models "${ABLATION[@]}" --seeds 0 1 2 3 4 \
+      --models "${ABLATION[@]}" lstm transformer mlp --seeds 0 1 2 3 4 \
       --epochs 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
       --tag holdout --out results/holdout
 }
@@ -102,7 +105,7 @@ stage_holdout() {
 stage_aggregate() {
   # Cheap and interactive; no scheduling needed.
   $PY -m qtcnn_research.aggregate --results results/walkforward \
-    --tables manuscript/tables | tee logs/aggregate.log
+    --tables manuscript/tables --n-trials "$N_TRIALS" | tee logs/aggregate.log
 }
 
 
@@ -128,16 +131,16 @@ stage_us_controls() {
 }
 
 stage_us_baselines() {
-  gq_run qtcnn-us-baselines -g 4G -c "$THREADS" -m 12 -- \
+  gq_run qtcnn-us-baselines --cpu-only -c "$THREADS" -m 12 -- \
     $PY -u -m qtcnn_research.run_experiment "${US[@]}" \
       --models lstm transformer mlp --seeds 0 1 2 3 4 \
-      --epochs 30 --max-train 60000 --gpu --n-trials "$N_TRIALS" "${COMMON[@]}" \
+      --epochs 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
       --tag baselines --out results/us_walkforward
 }
 
 stage_us_aggregate() {
   $PY -m qtcnn_research.aggregate --results results/us_walkforward \
-     --tables manuscript/tables/us --market "the US panel" --label-suffix=-us | tee logs/us_aggregate.log
+     --tables manuscript/tables/us --market "the US panel" --label-suffix=-us --n-trials "$N_TRIALS" | tee logs/us_aggregate.log
 }
 
 
@@ -148,7 +151,7 @@ stage_nostop() {
   gq_run qtcnn-nostop --cpu-only -c "$THREADS" -m 12 -- \
     $PY -u -m qtcnn_research.run_experiment \
       --models qtcnn_trained qtcnn_frozen --seeds 0 1 2 3 4 \
-      --epochs 30 --patience 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
+      --epochs 30 --patience 30 --final-weights --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
       --tag nostop --out results/walkforward_nostop
 }
 
@@ -162,6 +165,41 @@ stage_quantumonly() {
       --models qtcnn_quantumonly --seeds 0 1 2 3 4 \
       --epochs 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
       --tag quantumonly --out results/walkforward
+}
+
+stage_quantumonly_frozen() {
+  # Circuit-only with the circuit held at its initialisation: the arm that makes
+  # QuantumOnly a trained-vs-frozen contrast in its own right (review, 2026-11).
+  for seed in 0 1 2 3 4; do
+    gq_run qtcnn-qonly-frz-s$seed --cpu-only -c "$THREADS" -m 12 -t 40m -- \
+      $PY -u -m qtcnn_research.run_experiment \
+        --models qtcnn_quantumonly_frozen --seeds $seed \
+        --epochs 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
+        --tag quantumonly_frozen_s$seed --out results/walkforward
+  done
+}
+
+stage_states() {
+  # Re-train the trained-circuit condition cell by cell and keep the weights, so
+  # the shot budget can be measured on the encoder the model actually deployed
+  # (F37 measured it on an initialised encoder). Results land in their own
+  # directory and are checked against results/walkforward for determinism.
+  for seed in 0 1 2 3 4; do
+    gq_run qtcnn-states-s$seed --cpu-only -c "$THREADS" -m 12 -t 40m -- \
+      $PY -u -m qtcnn_research.run_experiment \
+        --models qtcnn_trained --seeds $seed \
+        --epochs 30 --max-train 60000 --n-trials "$N_TRIALS" "${COMMON[@]}" \
+        --tag states_s$seed --out results/walkforward_states --save-state results/states
+  done
+}
+
+stage_shots_trained() {
+  # Shot budget at the deployed input distribution, one measurement per trained cell.
+  gq_run qtcnn-shots-trained --cpu-only -c "$THREADS" -m 8 -t 90m -- \
+    $PY -u scripts_data/shot_budget_real_scores.py --threads "$THREADS" \
+      --states results/states/qtcnn_trained_f*_s*.pt --n-dates 3 --per-date 300 \
+      --shots 256 1024 8192 32768 131072 \
+      --out results/diagnostics/shot_budget_trained.csv
 }
 
 stage_reupload() {
@@ -199,6 +237,9 @@ stage_holdout_lightgbm() {
 
 case "${1:-all}" in
   reupload)    stage_reupload ;;
+  quantumonly_frozen) stage_quantumonly_frozen ;;
+  states)      stage_states ;;
+  shots_trained) stage_shots_trained ;;
   lightgbm)    stage_lightgbm ;;
   us_lightgbm) stage_us_lightgbm ;;
   holdout_lightgbm) stage_holdout_lightgbm ;;

@@ -1,0 +1,13 @@
+python      : 3.12.9
+platform    : Linux-5.15.0-139-generic-x86_64-with-glibc2.31
+cpu_count   : 24
+cpu_threads : 4
+load/core   : 0.92
+numpy       : 2.2.6
+pandas      : 2.2.3
+torch       : 2.6.0+cu118
+pennylane   : 0.42.3
+sklearn     : 1.6.1
+lightgbm    : 4.7.0
+statsmodels : 0.14.5
+gpu0        : 24576 MiB total, 847 MiB used, util 41%

@@ -3,31 +3,33 @@
 
 We evaluated a hybrid quantum temporal convolutional network for daily
 cross-sectional equity ranking under a protocol built to make the quantum
-contribution identifiable: five conditions trained through one code path, four rolling-origin folds with an embargo, five seeds, annualised risk
+contribution identifiable: six conditions trained through one code path, four rolling-origin folds with an embargo, five seeds, annualised risk
 metrics with bootstrap intervals, Deflated Sharpe Ratios, backtest-overfitting
 probabilities and family-wise error control. On \num{500} out-of-sample
 trading days the trained circuit is indistinguishable from the same circuit
 frozen at initialisation, from a parameter-matched classical surrogate, and
 from the network with the circuit removed; no condition is distinguishable from
-zero, and nine of the ten have no break-even transaction cost at all. Two
+zero, and ten of the eleven have no break-even transaction cost at all. Two
 one-sided tests place the trained-versus-frozen difference inside \num{0.03}
-annualised Sharpe in both markets, with early stopping or without, which is equivalence rather than a failure
+annualised Sharpe in both markets, and inside \num{0.10} when the circuit is
+trained to the full budget without early stopping, which is equivalence rather than a failure
 to reject; the contrast against the no-circuit control is resolved only to
 \num{0.50}, and we say so.
 
 The circuit is not the weak point. It has no barren plateau to twelve qubits,
 and its output ranking is robust to gate noise; a second ansatz family, with
-re-uploading and a global observable, reproduces the ordering and bounds its
+re-uploading and an observable read from every wire, reproduces the ordering and bounds its
 trained-versus-frozen difference at \num{0.25} Sharpe. What is
-expensive is measurement: at the spread the encoder produces on a real
-cross-section, preserving the ranking takes about \num{32768} shots per
-security rather than the \num{256} a scan on random inputs suggests. The weak point is the task, on which the achievable signal is
+expensive is measurement: at the spread the trained models produce on a real
+cross-section, preserving the ranking takes about \num{8192} shots per
+security at the median cell, and more than \num{131072} at the narrowest,
+rather than the \num{256} a scan on random inputs suggests. The weak point is the task, on which the achievable signal is
 smaller than the variance introduced by the training draw. Earlier reports of
 advantage on this data came from a 22-day window, single-seed model selection,
 a split adjustment applied in the wrong direction in the public implementation,
 and a classical encoder that already accounts for most of the reported gain.
 
-Two artefacts are released with the paper: a batched formulation of the quantum
+Two artefacts are released with the paper (\url{https://github.com/ChiShengChen/qtcnn-trained-frozen-absent}): a batched formulation of the quantum
 convolutional layer that reproduces the per-sample implementation to
 double precision at a \numrange{33}{72}-fold speed-up, and the evaluation stack itself,
 calibrated on synthetic data with known answers. Both are reusable on any

@@ -862,3 +862,113 @@ Trained - frozen = -0.032, paired se 0.091 (QCNN: 0.0072). TOST: not equivalent 
 norm. What transfers between families is "optimising does not improve on freezing"; "changes
 nothing to 0.03 Sharpe" is a QCNN result and is bounded at 0.25 for this family. Written up
 that way in method, results (Table reup), discussion threat and abstract.
+
+## F40. Six-reviewer pass (2026-11-01): what was wrong, what was changed, what was run
+Two reviewer reports (quantum ML, quantitative finance) and a consistency check on the
+2026-10-31 manuscript. Every item below was verified against the repo before anything was
+changed; the ones that held are listed with the fix, in the order the reviewers ranked them.
+
+1. **Shot budget was measured on an initialised encoder and described as trained.** Verified:
+   `scripts_data/shot_budget_real_scores.py` built `qtcnn_frozen` from `build_model` and
+   never loaded weights. Fixed by (a) `run_experiment.py --save-state`, which writes each
+   cell's trained `state_dict`, (b) a `--states` mode in the shot script that loads each cell
+   and draws dates from that cell's own test window, (c) running it on the 20 trained cells
+   (gq #5405-5409 for the weights, #5424 for the scan; `results/diagnostics/shot_budget_trained.csv`).
+   Result: training *widens* the band. Within-date score sd per cell runs 0.006-0.49 (median
+   0.10) against 0.018 for the initialised encoder and 0.443 for random angles. Rank
+   correlation at 256/1024/8192/32768/131072 shots: median over cells 0.905/0.964/0.993/
+   0.998/0.999; range 0.32-0.99 / 0.51-0.997 / 0.82-0.9996 / 0.94-0.9998 / 0.98-0.9999. The
+   mean over cells reaches 0.99 at ~32768 shots, numerically the same as the initialised
+   encoder's figure, but as an average of cells needing 256 and cells (three, all seed 4)
+   needing more than 131072. The manuscript now reports the median cell (8192 shots for 0.99)
+   and the range, and says the budget is a property of the trained cell. The old script
+   clipped encoder outputs to [-pi, pi]; the deployed model does not, so the new mode does not
+   either (`--clip` restores the old behaviour).
+2. **"Pre-specified margin 0.03" contradicted the git history.** Verified: results 09-12,
+   `equivalence.py` 09-17, F33 shows the margin chosen with the SE in view. The protocol now
+   says so and lists every post-hoc change in a new subsection "Changes made after results
+   were seen" (equivalence replacing the correlation headline; the F36 corrections; the DSR
+   dispersion change below; the shot-budget re-measurement; the conditions added after first
+   results; the holdout openings). The introduction's "tests specified in advance of the
+   result" sentence is corrected.
+3. **Holdout opened twice, Table 9 stale.** Verified: eight network conditions 2026-09
+   (fold_metrics_holdout.csv 09-10), LightGBM 2026-10-31. Disclosed in protocol and results.
+   Table regenerated from `results/holdout/*.csv` (transformer p 0.044 -> 0.03, LSTM RW
+   0.34 -> 0.39, MLP RW 0.14 -> 0.15, and every DSR under the new dispersion).
+4. **DSR used 1/sqrt(n) for the trial dispersion.** Verified in `evaluation.deflated_sharpe_ratio`.
+   `headline_table` now passes the empirical sd of the (model, seed) pooled-track Sharpe ratios
+   (annualised 0.30 on JPX walk-forward, 0.42 US, 0.85 holdout), which is what Bailey &
+   Lopez de Prado's expected-maximum formula takes; the CSV records `dsr_trial_sd_ann`. Best
+   walk-forward DSR 0.012 -> 0.17 (none), holdout transformer 0.29 -> 0.61. Verdicts unchanged.
+5. **Trained = frozen is close to structural in the hybrid conditions; the circuit-only pair
+   was missing its frozen arm.** Added `qtcnn_quantumonly_frozen` (circuit at its 0.1 N(0,I)
+   initialisation, encoder and head trained, head sees the circuit output only), 20 cells
+   (gq #5400-5404). Against the September circuit-only run this first looked like a
+   difference of -0.068 with se 0.228; against the reproducible circuit-only run (F41) it is
+   +0.059 with se 0.054, equivalent at 0.25 (p<0.001), not at 0.10 (p 0.22), MDE80 0.15;
+   per-cell Sharpe corr 0.98, IC differs by up to 0.005, circuit moves 20% of its norm.
+   Study is now 11 conditions x 5 seeds = 55 configurations.
+6. **Physics wording.** Depolarising channel is applied after every layer, not terminally,
+   so "cannot reorder" was an overstatement; CSV minimum rank corr is 0.9999, not 1.0000.
+   "Global observable" for the re-uploading ansatz is a sum of single-qubit Z (local terms);
+   reworded everywhere and the barren-plateau caveat stated. Initialisation 0.1 N(0,I) now in
+   the method section.
+7. **Text vs CSV.** US LightGBM-vs-none DM p = 0.041 (RW 0.17) now stated instead of "no
+   significant contrast". Holdout range "+0.72 to +2.34, eight" -> "+0.49 to +2.34, nine, MLP
+   -0.31". "4 bps removes the signal" -> break-even 0.06 bps on the one positive walk-forward
+   condition, 8 bps best on holdout. 2022-2025 extension: stated that no result uses it.
+   JPX Universe0 hindsight disclosed in Data and Discussion.
+8. **Format.** 54 em-dashes removed; abstract 356 -> 336 words; SpringerOpen Declarations
+   block; appendix before references; corresponding e-mail added (ORCIDs still to supply).
+
+Not changed: the article class (SpringerOpen template to be applied at submission), Zenodo
+DOI (needs the owner's account).
+
+## F41. The September network results do not reproduce; everything was re-run (2026-11-01/02)
+Found while saving trained weights for the shot budget (F40.1): re-training qtcnn_trained
+fold 0 seed 0 with the committed code gave Sharpe 0.994 / IC 0.0152 / 7 epochs, against the
+September cell's 0.611 / 0.0084 / 8 epochs.
+
+- **The committed code is deterministic.** That cell trained five times (gq #5405, #5419-5422)
+  at 4 and at 1 threads: bit-identical every time. The second ansatz family (run 2026-10-31
+  with committed code) reproduces bit-for-bit (#5454). LightGBM is untouched.
+- **No commit changed training.** The first commit a0e83d1 (2026-09-12), checked out in a
+  worktree and run on the same cell (#5639), gives 0.994 too. `git diff a0e83d1 HEAD` on the
+  training path adds only instrumentation and the second ansatz. The September runs
+  (6-25 Sep) came from working copies that were never committed; the 25 Sep full-budget run
+  evidently scored final-epoch weights (circuit shift 26% vs 18%), which no commit ever did.
+- **Re-run with committed code** (gq #5425-5431 JPX, #5434-5440 US, #5441-5443 holdout,
+  #5629-5633 circuit-only, #5634-5638 full budget). September files archived under
+  `results/*_2026-09_original/`; the canonical dirs now hold the rerun plus the LightGBM and
+  circuit-only-frozen runs, which were already made with committed code.
+  `scripts_data/rerun_comparison.py` writes `manuscript/tables/rerun.tex` (appendix).
+- **Agreement.** Per-cell Sharpe between runs of a condition: 0.44-0.82 JPX, 0.40-0.74 US.
+  Pooled Sharpe moves by up to 0.25 (JPX transformer), 0.73 (US MLP), 1.66 (holdout
+  transformer). That is the training-path noise the seed figure already shows.
+- **What held in both runs:** trained = frozen inside 0.03 on JPX (Nov: +0.008, se 0.0075,
+  p 0.006) and US (Nov: -0.002, se 0.0073, p<0.001); per-cell trained/frozen corr > 0.999;
+  nothing on JPX distinguishable from zero; no contrast vs the control survives Romano-Wolf
+  on any panel (Nov smallest: JPX 0.38 surrogate, US 0.22 LightGBM, holdout 0.33 LightGBM);
+  holdout trained vs frozen 0.02 apart; US everything loses money.
+- **What changed:** orderings and levels. JPX best is now the transformer (+0.107, DSR 0.17),
+  the only positive gross return (break-even 0.49 bps; was the no-circuit control). Holdout
+  best is the no-circuit control (+1.83, p 0.07, DSR 0.42; transformer fell from first to
+  sixth), all nine positive. US: five conditions significantly negative (was three). PBO JPX
+  0.58, US 0.15. JPX trained vs none: -0.082, se 0.120, equivalent at 0.50, not 0.25,
+  MDE 0.34 (was 0.67). Circuit-only pair tightened (F40.5).
+- **The full-budget control was broken in the released code.** `--patience 30` trained 30
+  epochs and then restored the best-validation weights, so it was bit-identical to the
+  early-stopped run (`results/walkforward_nostop_restorebest/`). Added
+  `TrainConfig.restore_best` / `run_experiment --final-weights`; the control now scores the
+  last epoch. Re-run as #5634-5638.
+- **The holdout was opened a third time** for the rerun; disclosed in the protocol, with the
+  first opening in the appendix table.
+- Also: `scripts_data/spanning.py` now produces the spanning numbers (previously run ad hoc;
+  it reproduces the September figures exactly on the archived returns). New: R^2 0.910 on
+  the four neural baselines, alpha t -0.04; twin R^2 0.975, t -0.73.
+- **Full-budget control, corrected** (`--patience 30 --final-weights`, #5634-5638): circuit
+  moves 68% of its initial norm (25-140%) instead of 18%; trained -0.108, frozen -0.108;
+  difference +0.000, se 0.043 (six times the early-stopped se), TOST equivalent at 0.10
+  (p 0.02), not at 0.03 (p 0.24), MDE 0.12; per-cell corr 0.987; IC halves (0.0083 ->
+  0.0038) for both. Manuscript: the 0.03 certificate is now stated for the early-stopped
+  runs; the full-budget certificate is 0.10. The September full-budget run had claimed 0.03.

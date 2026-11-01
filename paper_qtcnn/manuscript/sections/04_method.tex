@@ -33,8 +33,8 @@ Each stage applies the two-qubit block
 \end{equation}
 to disjoint neighbouring pairs, then pools by retaining every second wire. The
 same $\boldsymbol{\theta} \in \mathbb{R}^{6}$ is reused across all pairs within
-a stage, so the circuit carries $6L$ parameters in total --- 18 at $n=8$,
-$L=3$ --- independently of the register width. The layer output is the
+a stage, so the circuit carries $6L$ parameters in total (18 at $n=8$,
+$L=3$) independently of the register width. The layer output is the
 expectation $\langle Z \rangle$ of the single surviving wire.
 
 \paragraph{Second ansatz family.}
@@ -46,7 +46,10 @@ applies $R_Y(\theta)\,R_Z(\phi)$ to every wire, with its own parameters, and
 entangles the register with a ring of CNOTs; there is no pooling; and the
 output is the mean of $\langle Z \rangle$ over all eight wires. It carries
 $2nL = 48$ parameters, re-uploading raises the Fourier degree of the function
-it computes, and the observable is global rather than local. It is run in the
+it computes, and the readout is a sum of single-qubit $Z$ terms over every
+wire rather than one wire's $Z$ (a sum of local observables, not a many-body
+operator, so the barren-plateau results for global cost functions do not apply
+to it). It is run in the
 \textsc{Trained} and \textsc{Frozen} conditions on the Tokyo panel, with the
 same seeds, folds, encoder, head and training loop, and compared with the
 same \textsc{None} control.
@@ -61,9 +64,9 @@ cross-entropy against cross-sectional extreme labels
 \label{sec:method:batched}
 Evaluating the QNode once per sample, as the reference implementation does, is
 the dominant cost of training. Passing the batch through the simulator as a
-broadcast parameter dimension yields bit-identical expectation values --- the
+broadcast parameter dimension yields bit-identical expectation values (the
 maximum absolute difference over every configuration we timed is exactly zero
-in double precision --- while replacing the Python-level loop. At $n=8$ and
+in double precision) while replacing the Python-level loop. At $n=8$ and
 $L=3$ the forward pass over a batch of \num{512} falls from
 \SI{8.64}{\second} to \SI{0.12}{\second}, a factor of \num{71.7}; the gain
 grows with batch size, from \num{33.1}$\times$ at \num{64} through
@@ -105,8 +108,9 @@ quantum position:
 \begin{description}
   \item[\textsc{Trained}] the circuit parameters $\boldsymbol{\theta}$ are
     learned jointly with the encoder and head.
-  \item[\textsc{Frozen}] the identical circuit, held at its random
-    initialisation. The contrast against \textsc{Trained} separates the value of
+  \item[\textsc{Frozen}] the identical circuit, held at its initialisation,
+    $\boldsymbol{\theta} \sim 0.1\,\mathcal{N}(0, I)$, the same draw per seed
+    from which \textsc{Trained} starts. The contrast against \textsc{Trained} separates the value of
     \emph{optimising} the circuit from the value of the fixed nonlinear feature
     it computes.
   \item[\textsc{Surrogate}] a classical map with the same parameter count and
@@ -119,9 +123,12 @@ quantum position:
   \item[\textsc{None}] the head receives $\mathbf{e}$ alone.
 \end{description}
 
-A fifth condition, \textsc{QuantumOnly}, withholds $\mathbf{e}$ from the head so
-that the score depends on the circuit output alone. It bounds how much ranking
-information the measured observable carries by itself
+A fifth and a sixth condition, \textsc{QuantumOnly} with the circuit trained
+and with it frozen, withhold $\mathbf{e}$ from the head so that the score
+depends on the circuit output alone. The pair bounds how much ranking
+information the measured observable carries by itself, and it is the one
+contrast in which the circuit's parameters are the only route from features to
+score, so trained-versus-frozen there cannot be dismissed as structural
 (Section~\ref{sec:results:ablation}).
 
 Parameter counts across the conditions differ by less than 0.4\%

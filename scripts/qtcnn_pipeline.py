@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 import argparse
 import shutil
 
@@ -216,13 +216,12 @@ def make_sequences(df: pd.DataFrame, feature_cols: List[str], seq_len: int = 20)
 # ----------------------------
 # QCNN model and training
 # ----------------------------
-def get_qcnn_device(n_qubits: int) -> Any:
+def get_qcnn_device(n_qubits: int) -> qml.Device:
     return qml.device("default.qubit", wires=n_qubits)
 
 
 def conv_layer(params, wires):
-    # Pairwise conv; skip leftover if odd count
-    for i in range(0, len(wires) - 1, 2):
+    for i in range(0, len(wires), 2):
         w1, w2 = wires[i], wires[i + 1]
         qml.RY(params[0], wires=w1)
         qml.RY(params[1], wires=w2)
@@ -240,22 +239,14 @@ def pool_layer(wires):
 
 def make_qcnn_qnode(n_qubits: int, n_layers: int) -> Tuple[qml.QNode, torch.Tensor]:
     dev = get_qcnn_device(n_qubits)
-    max_layers = int(np.floor(np.log2(max(1, n_qubits))))
-    effective_layers = max(0, min(n_layers, max_layers))
 
     def qcnn_block(x, weights):
         qml.AngleEmbedding(x, wires=range(n_qubits), rotation="Y")
         active_wires = list(range(n_qubits))
-        # Only apply up to effective_layers conv+pool steps
-        for li in range(effective_layers):
-            if len(active_wires) < 2:
-                break
-            w = weights[li]
+        for w in weights:
             conv_layer(w, active_wires)
             active_wires = pool_layer(active_wires)
-        # Ensure at least one wire remains to measure
-        if len(active_wires) == 0:
-            active_wires = [0]
+        assert len(active_wires) == 1
         return active_wires[0]
 
     @qml.qnode(dev, interface="torch")
@@ -283,38 +274,7 @@ class QuantumTemporalQCNN(nn.Module):
             batch_scores.append(s)
         scores = torch.stack(batch_scores)
         probs = torch.sigmoid(self.beta * scores)
-        # Ensure float32 for downstream losses
-        return probs.float(), scores.float()
-
-
-class HybridQTCNN(nn.Module):
-    def __init__(self, n_qubits: int = 8, n_layers: int = 3, beta: float = 1.0, classical_dim: int = 8):
-        super().__init__()
-        self.n_qubits = n_qubits
-        self.n_layers = n_layers
-        self.beta = beta
-        self.qnode, init_w = make_qcnn_qnode(n_qubits, n_layers)
-        self.weights = nn.Parameter(init_w)
-        # small MLP head: concat [quantum_score, classical_features] -> logits
-        in_dim = int(classical_dim) + 1
-        self.mlp = nn.Sequential(
-            nn.Linear(in_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1),
-        )
-
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        # x: [B, n_qubits] classical compressed features (same vector used by QCNN)
-        batch_scores = []
-        for i in range(x.shape[0]):
-            s = self.qnode(x[i], self.weights)  # scalar
-            batch_scores.append(s)
-        scores = torch.stack(batch_scores).float()  # [B]
-        feats = torch.cat([scores.unsqueeze(1), x.float()], dim=1)  # [B, 1+n_qubits]
-        logits = self.mlp(feats).squeeze(1)  # [B]
-        return logits.float(), scores
+        return probs, scores
 
 
 def prepare_qtcnn_inputs(
@@ -349,12 +309,11 @@ def train_qtcnn_classifier(
     n_layers: int = 3,
     beta: float = 1.0,
     lr: float = 1e-3,
-) -> HybridQTCNN:
+) -> QuantumTemporalQCNN:
     device = torch.device("cpu")
-    model = HybridQTCNN(n_qubits=n_qubits, n_layers=n_layers, beta=beta, classical_dim=int(X.shape[1])).to(device)
-    model = model.float()
+    model = QuantumTemporalQCNN(n_qubits=n_qubits, n_layers=n_layers, beta=beta).to(device)
     opt = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.BCELoss()
 
     X_t = torch.from_numpy(X.astype(np.float32))
     y_t = torch.from_numpy(y.astype(np.float32))
@@ -372,13 +331,11 @@ def train_qtcnn_classifier(
         total = 0.0
         n = 0
         for xb, yb in dl:
-            xb = xb.to(device=device, dtype=torch.float32)
-            yb = yb.to(device=device, dtype=torch.float32)
+            xb = xb.to(device)
+            yb = yb.to(device)
             opt.zero_grad()
-            logits, _ = model(xb)
-            logits = logits.to(dtype=torch.float32)
-            yb = yb.to(dtype=torch.float32)
-            loss = loss_fn(logits, yb)
+            probs, _ = model(xb)
+            loss = loss_fn(probs, yb)
             loss.backward()
             opt.step()
             total += float(loss.item()) * xb.size(0)
@@ -388,16 +345,15 @@ def train_qtcnn_classifier(
     return model
 
 
-def predict_qtcnn_proba(model: HybridQTCNN, X: np.ndarray) -> np.ndarray:
+def predict_qtcnn_proba(model: QuantumTemporalQCNN, X: np.ndarray) -> np.ndarray:
     device = torch.device("cpu")
     preds = []
     bs = 256
     with torch.no_grad():
         for i in tqdm(range(0, len(X), bs), desc="Predict QTCNN", dynamic_ncols=True):
-            xb = torch.from_numpy(X[i : i + bs]).to(device=device, dtype=torch.float32)
-            logits, _ = model(xb)
-            probs = torch.sigmoid(logits)
-            preds.append(probs.to(torch.float32).detach().cpu().numpy().reshape(-1))
+            xb = torch.from_numpy(X[i : i + bs]).to(device)
+            probs, _ = model(xb)
+            preds.append(probs.detach().cpu().numpy().reshape(-1))
     return np.concatenate(preds, axis=0)
 
 

@@ -34,13 +34,15 @@ LABELS = {
     "qtcnn_surrogate": "QTCNN, classical surrogate",
     "qtcnn_noquantum": "QTCNN, no circuit",
     "qtcnn_quantumonly": "QTCNN, circuit only",
+    "qtcnn_quantumonly_frozen": "QTCNN, circuit only, frozen",
     "tcn": "TCN baseline",
     "lstm": "LSTM baseline",
     "transformer": "Transformer baseline",
     "mlp": "MLP baseline",
     "lightgbm": "LightGBM baseline",
 }
-QUANTUM_PATH = {"qtcnn_trained", "qtcnn_frozen", "qtcnn_surrogate", "qtcnn_noquantum"}
+QUANTUM_PATH = {"qtcnn_trained", "qtcnn_frozen", "qtcnn_surrogate", "qtcnn_noquantum",
+                "qtcnn_quantumonly", "qtcnn_quantumonly_frozen"}
 
 
 def _style(ax, ylabel: str = "", xlabel: str = ""):
@@ -153,31 +155,41 @@ def fig_cost(costs: pd.DataFrame, out: Path):
     _save(fig, out, "fig_cost")
 
 
-def fig_shots(shots: pd.DataFrame, out: Path, real: Optional[pd.DataFrame] = None):
-    """Rank preservation against shot budget, at both input distributions.
+def fig_shots(shots: pd.DataFrame, out: Path, real: Optional[pd.DataFrame] = None,
+              trained: Optional[pd.DataFrame] = None):
+    """Rank preservation against shot budget, at three input distributions.
 
-    The random-angle curve is what a circuit-level scan measures; the real
-    cross-section curve is what the deployed model faces, and the gap between
-    them is the point of the figure.
+    The random-angle curve is what a circuit-level scan measures; the
+    initialised-encoder curve is the first real-input measurement; the trained
+    cells are what the deployed models face, one faint line per cell and the
+    median in bold. The spread between cells is the point of the figure.
     """
     df = shots[shots["shots"] != "analytic"].copy()
     df["shots"] = df["shots"].astype(int)
     df = df.sort_values("shots")
     fig, ax = plt.subplots(figsize=(4.8, 3.2))
+    xmax = df["shots"].max()
+    if trained is not None and not trained.empty:
+        for _, cell in trained.groupby("cell"):
+            c = cell.groupby("shots")["rank_corr"].mean().sort_index()
+            ax.plot(c.index, c.values, color=S3, lw=0.7, alpha=0.35)
+        med = trained.groupby(["cell", "shots"])["rank_corr"].mean().groupby("shots").median().sort_index()
+        ax.plot(med.index, med.values, color=S3, lw=2, marker="^", ms=6, mec=SURFACE, mew=1.2,
+                label="trained cells, median (20 cells, sd 0.006-0.49)")
+        xmax = max(xmax, int(med.index.max()))
     ax.plot(df["shots"], df["rank_corr_vs_analytic"], color=S1, lw=2, marker="o", ms=6,
             mec=SURFACE, mew=1.2, label="random angles (sd 0.44)")
-    xmax = df["shots"].max()
     if real is not None and not real.empty:
         r = real.groupby("shots")["rank_corr"].mean().sort_index()
         ax.plot(r.index, r.values, color=S2, lw=2, marker="s", ms=6, mec=SURFACE, mew=1.2,
-                label="real cross-sections (sd 0.02)")
+                label="initialised encoder (sd 0.02)")
         xmax = max(xmax, int(r.index.max()))
     ax.axhline(0.99, color=AXIS, lw=0.8, ls="--")
     ax.text(xmax * 1.6, 0.99, "0.99", fontsize=7.5, color=MUTED, va="center")
     ax.set_xscale("log", base=2)
     ax.set_xlim(df["shots"].min() / 1.5, xmax * 2.2)
     ax.set_ylim(0.2, 1.03)
-    ax.legend(frameon=False, fontsize=7.5, loc="lower right")
+    ax.legend(frameon=False, fontsize=7, loc="lower right")
     _style(ax, ylabel="Spearman rank corr. vs analytic", xlabel="Shots per circuit evaluation")
     _save(fig, out, "fig_shots")
 
@@ -213,7 +225,9 @@ def main():
     real_hi = diag / "shot_budget_real_high.csv"
     real = pd.concat([pd.read_csv(f) for f in (real_lo, real_hi) if f.exists()], ignore_index=True) \
         if (real_lo.exists() or real_hi.exists()) else None
-    fig_shots(pd.read_csv(diag / "shot_noise.csv"), out, real=real)
+    trained_f = diag / "shot_budget_trained.csv"
+    trained = pd.read_csv(trained_f) if trained_f.exists() else None
+    fig_shots(pd.read_csv(diag / "shot_noise.csv"), out, real=real, trained=trained)
     fig_barren(pd.read_csv(diag / "barren_plateau.csv"), out)
 
 

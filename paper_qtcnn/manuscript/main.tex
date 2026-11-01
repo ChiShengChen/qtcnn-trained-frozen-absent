@@ -8,6 +8,7 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{siunitx}
+\usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{natbib}
@@ -25,7 +26,7 @@ Cross-Sectional Equity Ranking}
 \author{Chi-Sheng Chen$^{1,*}$ \qquad En-Jui Kuo$^{2}$\\[4pt]
 {\small $^{1}$Beth Israel Deaconess Medical Center \& Harvard Medical School, Boston, MA 02115, USA}\\
 {\small $^{2}$Department of Electrophysics, National Yang Ming Chiao Tung University, Hsinchu 30010, Taiwan}\\
-{\small $^{*}$Corresponding author}}
+{\small $^{*}$Corresponding author: m50816m50816@gmail.com}}
 \date{}
 
 \begin{document}
@@ -48,31 +49,40 @@ testing, backtest overfitting, deflated Sharpe ratio, reproducibility
 \input{sections/07_discussion}
 \input{sections/08_conclusion}
 
-\section*{Funding}
+\appendix
+\input{sections/A_reproducibility}
+
+\section*{Declarations}
+
+\subsection*{Availability of data and materials}
+The JPX panel is the public competition dataset \citep{jpx2022competition} and
+is not redistributed here. The United States panel is reconstructed from public
+daily prices by the scripts released with this paper at
+\url{https://github.com/ChiShengChen/qtcnn-trained-frozen-absent}, which also
+contain the evaluation stack, the calibration tests, the per-cell results and
+daily return series behind every table and figure in this manuscript, the
+trained weights of the cells used for the shot-budget measurement, and the
+legacy pipelines re-evaluated in Section~\ref{sec:results:reeval}.
+
+\subsection*{Competing interests}
+The reference implementation and published result re-examined in this paper are
+the authors' own \citep{chen2025quantumb}. The authors declare that they have no
+competing interests.
+
+\subsection*{Funding}
 EJK acknowledges financial support from the National Science and Technology
 Council (NSTC) of Taiwan under Grant No.~NSTC~114-2112-M-A49-036-MY3.
 
-\section*{Authors' contributions}
+\subsection*{Authors' contributions}
 CSC designed the study, wrote the code, ran the experiments and drafted the
 manuscript. EJK contributed to the analysis and interpretation of the quantum
 diagnostics and revised the manuscript. Both authors read and approved the
 final manuscript.
 
-\section*{Declaration of competing interests}
-The reference implementation and published result re-examined in this paper are
-the authors' own \citep{chen2025quantumb}. The authors declare no financial or
-other competing interests.
-
-\section*{Data and code availability}
-The JPX panel is the public competition dataset \citep{jpx2022competition}. The
-United States panel is reconstructed from public daily prices by the scripts
-released with this paper, which also contain the evaluation stack, the
-calibration tests, and every table and figure in this manuscript.
+\subsection*{Acknowledgements}
+Not applicable.
 
 \bibliographystyle{plainnat}
 \bibliography{refs,refs_generated}
-
-\appendix
-\input{sections/A_reproducibility}
 
 \end{document}

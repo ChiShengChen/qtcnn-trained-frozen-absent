@@ -50,6 +50,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-train", type=int, default=60000)
     p.add_argument("--patience", type=int, default=6,
                    help="early-stopping patience on validation AUC; set >= --epochs to disable")
+    p.add_argument("--final-weights", action="store_true",
+                   help="score the weights of the last epoch rather than restoring the best "
+                        "validation epoch; with --patience >= --epochs this is the full-budget control")
     p.add_argument("--threads", type=int, default=4)
     p.add_argument("--nice", type=int, default=15)
     p.add_argument("--max-load", type=float, default=1.5,
@@ -60,6 +63,10 @@ def parse_args() -> argparse.Namespace:
                    help="configurations searched across the whole study, for the "
                         "Deflated Sharpe Ratio. Set it explicitly when the sweep is "
                         "split across parallel jobs.")
+    p.add_argument("--save-state", default=None,
+                   help="directory in which to save each cell's trained weights as "
+                        "<model>_f<fold>_s<seed>.pt, so diagnostics can be run on the "
+                        "encoder the model actually deployed rather than on an initialised one")
     p.add_argument("--holdout", action="store_true",
                    help="evaluate the locked 2021-12-06..2022-06-24 window instead of walk-forward")
     p.add_argument("--pilot", action="store_true",
@@ -179,6 +186,7 @@ def main() -> None:
         batch_size=args.batch_size,
         max_train_samples=10000 if args.pilot else args.max_train,
         patience=args.patience,
+        restore_best=not args.final_weights,
         device=device,
     )
     seeds = args.seeds[:2] if args.pilot else args.seeds
@@ -234,6 +242,9 @@ def main() -> None:
                     returns_dir / f"{model_name}_f{fold.fold}_s{seed}.csv",
                     header=True, index_label="Date",
                 )
+                if args.save_state and result.state is not None:
+                    sdir = Path(args.save_state); sdir.mkdir(parents=True, exist_ok=True)
+                    torch.save(result.state, sdir / f"{model_name}_f{fold.fold}_s{seed}.pt")
                 del result
                 print(
                     f"  {model_name:18s} fold{fold.fold} seed{seed}  "

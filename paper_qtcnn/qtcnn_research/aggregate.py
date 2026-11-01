@@ -71,12 +71,20 @@ def headline_table(returns: pd.DataFrame, n_trials: Optional[int] = None,
     """Main results table: one row per model over the pooled OOS track."""
     models = sorted(returns["model"].unique())
     n_trials = n_trials or len(models)
+    # The trials the DSR deflates against are the (model, seed) tracks the study
+    # ran; their empirical dispersion is the variance term in Bailey and Lopez
+    # de Prado's expected maximum. Per-period, as the formula expects.
+    trial_sharpes = [ev.annualised_sharpe(t) for m in models
+                     for t in per_seed_tracks(returns, m).values()]
+    trial_sd = (float(np.nanstd(trial_sharpes, ddof=1)) / np.sqrt(ev.TRADING_DAYS)
+                if len(trial_sharpes) > 1 else None)
     rows = []
     for model in models:
         track = pooled_track(returns, model)
         seeds = per_seed_tracks(returns, model)
         seed_sharpes = [ev.annualised_sharpe(s) for s in seeds.values()]
-        report = ev.evaluate_strategy(model, track, n_trials=n_trials, bootstrap=bootstrap)
+        report = ev.evaluate_strategy(model, track, n_trials=n_trials, bootstrap=bootstrap,
+                                      trial_sharpe_std=trial_sd)
         row = report.to_row()
         row["sharpe_seed_mean"] = float(np.nanmean(seed_sharpes)) if seed_sharpes else np.nan
         row["sharpe_seed_std"] = float(np.nanstd(seed_sharpes, ddof=1)) if len(seed_sharpes) > 1 else np.nan
@@ -212,6 +220,7 @@ PAPER_LABELS = {
     "qtcnn_surrogate": r"QTCNN, classical surrogate",
     "qtcnn_noquantum": r"QTCNN, no circuit",
     "qtcnn_quantumonly": r"QTCNN, circuit only",
+    "qtcnn_quantumonly_frozen": r"QTCNN, circuit only, frozen",
     "tcn": "TCN baseline",
     "lstm": "LSTM baseline",
     "transformer": "Transformer baseline",
@@ -341,6 +350,12 @@ def main() -> None:
         eq_rows.append(equivalence_table(returns, reference="qtcnn_frozen",
                                          models=["qtcnn_trained"],
                                          margins=(0.03, 0.10, 0.25), n_boot=args.bootstrap))
+    if {"qtcnn_quantumonly", "qtcnn_quantumonly_frozen"} <= models:
+        # The circuit-only pair is the one place training the circuit could show:
+        # the head sees nothing else, so trained-vs-frozen here is a direct test.
+        eq_rows.append(equivalence_table(returns, reference="qtcnn_quantumonly_frozen",
+                                         models=["qtcnn_quantumonly"],
+                                         margins=(0.03, 0.10, 0.25, 0.50), n_boot=args.bootstrap))
     if "qtcnn_noquantum" in models:
         others = [m for m in ("qtcnn_trained", "qtcnn_frozen", "qtcnn_surrogate") if m in models]
         if others:
