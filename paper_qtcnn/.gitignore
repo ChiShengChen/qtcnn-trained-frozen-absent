@@ -3,7 +3,6 @@ cache/
 logs/
 __pycache__/
 *.pyc
-results/**/returns/
 manuscript/*.aux
 manuscript/*.bbl
 manuscript/*.blg
