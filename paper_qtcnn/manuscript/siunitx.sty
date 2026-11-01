@@ -1,0 +1,16 @@
+% Minimal local stand-in for siunitx, used only when the real package is not
+% installed. Defines the macros this manuscript uses as plain pass-throughs.
+% Delete this file once siunitx is available; nothing else needs to change.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{siunitx}[2026/09/10 local shim]
+\newcommand{\sisetup}[1]{}
+\newcommand{\num}[1]{\ensuremath{#1}}
+\newcommand{\SI}[2]{\ensuremath{#1\,\mathrm{#2}}}
+\newcommand{\si}[1]{\ensuremath{\mathrm{#1}}}
+\newcommand{\numrange}[2]{\ensuremath{#1}--\ensuremath{#2}}
+\newcommand{\numlist}[1]{#1}
+% unit macros used by this manuscript
+\newcommand{\second}{s}
+\newcommand{\percent}{\%}
+\newcommand{\milli}{m}
+\newcommand{\metre}{m}

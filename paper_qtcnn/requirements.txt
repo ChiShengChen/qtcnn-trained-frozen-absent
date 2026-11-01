@@ -1,0 +1,14 @@
+autograd==1.7.0
+lightgbm==4.7.0
+matplotlib==3.10.1
+networkx==3.3
+numpy==2.2.6
+pandas==2.2.3
+pennylane==0.42.3
+pyarrow==25.0.1
+scikit-learn==1.6.1
+scipy==1.15.3
+statsmodels==0.14.5
+torch==2.6.0
+tqdm==4.67.1
+yfinance==1.7.0

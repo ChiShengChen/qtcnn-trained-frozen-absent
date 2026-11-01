@@ -1,0 +1,140 @@
+\section{Model}
+\label{sec:method}
+
+\subsection{Architecture}
+\label{sec:method:arch}
+The model maps a window of $T=20$ daily cross-sectionally normalised feature
+vectors $\mathbf{x}_{1:T} \in \mathbb{R}^{T \times F}$, $F=21$, to a scalar
+ranking score in three stages.
+
+\paragraph{Temporal encoder.}
+A dilated causal convolutional stack reduces the window to a vector
+$\mathbf{e} \in \mathbb{R}^{n}$, where $n$ is the qubit count. Two blocks with
+kernel size 3 and dilations $1$ and $2$ give a receptive field of seven trading
+days; the representation of the final step is projected through a two-layer
+head whose $\tanh$ output is scaled by $\pi$, so that every component is a valid
+rotation angle. Padding is applied on the left only. A symmetric padding, as
+used in the reference implementation this work audits, mixes each position with
+the step that follows it and so does not implement the receptive field the
+architecture claims.
+
+\paragraph{Quantum convolutional layer.}
+The encoder output is embedded as single-qubit rotations,
+$\ket{\psi_0} = \bigotimes_{i=1}^{n} R_Y(e_i)\ket{0}$, and processed by
+$L = \min(L_{\max}, \lfloor \log_2 n \rfloor)$ convolution-and-pooling stages.
+Each stage applies the two-qubit block
+\begin{equation}
+  U(\boldsymbol{\theta}) =
+  \bigl(R_Y(\theta_5) \otimes R_Y(\theta_6)\bigr)\,
+  \mathrm{CNOT}_{21}\,
+  \bigl(R_Z(\theta_3) \otimes R_Z(\theta_4)\bigr)\,
+  \mathrm{CNOT}_{12}\,
+  \bigl(R_Y(\theta_1) \otimes R_Y(\theta_2)\bigr)
+\end{equation}
+to disjoint neighbouring pairs, then pools by retaining every second wire. The
+same $\boldsymbol{\theta} \in \mathbb{R}^{6}$ is reused across all pairs within
+a stage, so the circuit carries $6L$ parameters in total --- 18 at $n=8$,
+$L=3$ --- independently of the register width. The layer output is the
+expectation $\langle Z \rangle$ of the single surviving wire.
+
+\paragraph{Second ansatz family.}
+A result on one circuit family is a result on one circuit family. The
+trained-versus-frozen contrast is therefore repeated on a circuit that differs
+from the QCNN in every respect a reviewer could name: the encoder output is
+re-uploaded as $R_Y$ rotations before each of $L = 3$ layers; each layer
+applies $R_Y(\theta)\,R_Z(\phi)$ to every wire, with its own parameters, and
+entangles the register with a ring of CNOTs; there is no pooling; and the
+output is the mean of $\langle Z \rangle$ over all eight wires. It carries
+$2nL = 48$ parameters, re-uploading raises the Fourier degree of the function
+it computes, and the observable is global rather than local. It is run in the
+\textsc{Trained} and \textsc{Frozen} conditions on the Tokyo panel, with the
+same seeds, folds, encoder, head and training loop, and compared with the
+same \textsc{None} control.
+
+\paragraph{Head.}
+A two-hidden-layer perceptron consumes the concatenation
+$[\langle Z \rangle, \mathbf{e}]$ and emits a logit. Training minimises binary
+cross-entropy against cross-sectional extreme labels
+(Section~\ref{sec:protocol:labels}).
+
+\subsection{Batched circuit evaluation}
+\label{sec:method:batched}
+Evaluating the QNode once per sample, as the reference implementation does, is
+the dominant cost of training. Passing the batch through the simulator as a
+broadcast parameter dimension yields bit-identical expectation values --- the
+maximum absolute difference over every configuration we timed is exactly zero
+in double precision --- while replacing the Python-level loop. At $n=8$ and
+$L=3$ the forward pass over a batch of \num{512} falls from
+\SI{8.64}{\second} to \SI{0.12}{\second}, a factor of \num{71.7}; the gain
+grows with batch size, from \num{33.1}$\times$ at \num{64} through
+\num{64.2}$\times$ at \num{256}, because the fixed per-call overhead is
+amortised over more samples (Table~\ref{tab:batching}). Adjoint differentiation
+on a state-vector backend is slower at this width because the register is too
+small to amortise its own overhead.
+
+\begin{table}[t]
+  \centering
+  \caption{Batched against per-sample circuit evaluation at $n=8$, $L=3$,
+  \num{18} parameters. Median of three repeats after warm-up; the machine was
+  under scheduler control. Outputs agree exactly in double precision.}
+  \label{tab:batching}
+  \begin{tabular}{rrrrr}
+    \toprule
+    Batch & Per-sample loop (s) & Batched (s) & Speed-up & $\max|\Delta|$ \\
+    \midrule
+    64  & 0.765 & 0.023 & 33.1$\times$ & 0 \\
+    256 & 3.218 & 0.050 & 64.2$\times$ & 0 \\
+    512 & 8.635 & 0.120 & 71.7$\times$ & 0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+This is not merely an engineering note. The reference implementation compensated
+for its cost by subsampling to 9\% of trading days and by capping training at
+\num{10000} sequences, which is what reduced its reported out-of-sample windows
+to 22 and in some runs 2 trading days. The speed-up is what makes the evaluation
+protocol of Section~\ref{sec:protocol} affordable.
+
+\subsection{Ablation conditions}
+\label{sec:method:ablation}
+A hybrid model whose head also observes the classical encoding cannot, on its
+own, tell us whether the circuit contributed. We therefore train four conditions
+through an identical code path, differing only in the block that occupies the
+quantum position:
+
+\begin{description}
+  \item[\textsc{Trained}] the circuit parameters $\boldsymbol{\theta}$ are
+    learned jointly with the encoder and head.
+  \item[\textsc{Frozen}] the identical circuit, held at its random
+    initialisation. The contrast against \textsc{Trained} separates the value of
+    \emph{optimising} the circuit from the value of the fixed nonlinear feature
+    it computes.
+  \item[\textsc{Surrogate}] a classical map with the same parameter count and
+    the same pairwise-mixing-then-pooling structure, with angles initialised on
+    $(-\pi, \pi]$ so that its output distribution matches the circuit's in
+    scale (mean absolute activation \num{0.59} against \num{0.69}). A
+    small-normal initialisation, the obvious default, shrinks its output by
+    three orders of magnitude across three layers and would handicap the
+    control.
+  \item[\textsc{None}] the head receives $\mathbf{e}$ alone.
+\end{description}
+
+A fifth condition, \textsc{QuantumOnly}, withholds $\mathbf{e}$ from the head so
+that the score depends on the circuit output alone. It bounds how much ranking
+information the measured observable carries by itself
+(Section~\ref{sec:results:ablation}).
+
+Parameter counts across the conditions differ by less than 0.4\%
+(\numrange{23817}{23899}), and the purely classical convolutional baseline is
+matched to the \textsc{None} condition exactly.
+
+\paragraph{Classical baselines.}
+Five models somebody would deploy, trained on the same windows, labels,
+subsample and portfolio rule: a wider temporal CNN (hidden width \num{128},
+three blocks), an LSTM, a Transformer encoder, a perceptron on the flattened
+window, and a gradient-boosted tree (LightGBM, \num{63} leaves, learning rate
+\num{0.03}, up to \num{2000} trees with early stopping on validation AUC after
+\num{100} rounds) on the same flattened $20 \times 21$ window. The last is the
+model family that wins cross-sectional equity competitions, including the one
+this dataset comes from, so its absence would be the first thing a finance
+reader noticed.

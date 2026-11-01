@@ -1,0 +1,14 @@
+.venv/
+cache/
+logs/
+__pycache__/
+*.pyc
+results/**/returns/
+manuscript/*.aux
+manuscript/*.bbl
+manuscript/*.blg
+manuscript/*.log
+manuscript/*.out
+manuscript/*.pdf
+manuscript/*.fls
+manuscript/*.fdb_latexmk

@@ -1,0 +1,78 @@
+% QTCNN for cross-sectional equity ranking -- manuscript skeleton
+% Build: latexmk -pdf main.tex
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{natbib}
+\usepackage{subcaption}
+\providecommand{\ket}[1]{\left|#1\right\rangle}
+\providecommand{\bra}[1]{\left\langle#1\right|}
+
+\graphicspath{{figures/}}
+\sisetup{detect-weight=true,detect-inline-weight=math}
+
+\title{Trained, Frozen, or Absent:\\
+Identifying What a Quantum Layer Contributes to\\
+Cross-Sectional Equity Ranking}
+
+\author{Chi-Sheng Chen$^{1,*}$ \qquad En-Jui Kuo$^{2}$\\[4pt]
+{\small $^{1}$Beth Israel Deaconess Medical Center \& Harvard Medical School, Boston, MA 02115, USA}\\
+{\small $^{2}$Department of Electrophysics, National Yang Ming Chiao Tung University, Hsinchu 30010, Taiwan}\\
+{\small $^{*}$Corresponding author}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{sections/00_abstract}
+\end{abstract}
+
+\noindent\textbf{Keywords:} quantum machine learning, quantum convolutional
+neural network, cross-sectional equity ranking, null result, equivalence
+testing, backtest overfitting, deflated Sharpe ratio, reproducibility
+
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_data}
+\input{sections/04_method}
+\input{sections/05_protocol}
+\input{sections/06_results}
+\input{sections/07_discussion}
+\input{sections/08_conclusion}
+
+\section*{Funding}
+EJK acknowledges financial support from the National Science and Technology
+Council (NSTC) of Taiwan under Grant No.~NSTC~114-2112-M-A49-036-MY3.
+
+\section*{Authors' contributions}
+CSC designed the study, wrote the code, ran the experiments and drafted the
+manuscript. EJK contributed to the analysis and interpretation of the quantum
+diagnostics and revised the manuscript. Both authors read and approved the
+final manuscript.
+
+\section*{Declaration of competing interests}
+The reference implementation and published result re-examined in this paper are
+the authors' own \citep{chen2025quantumb}. The authors declare no financial or
+other competing interests.
+
+\section*{Data and code availability}
+The JPX panel is the public competition dataset \citep{jpx2022competition}. The
+United States panel is reconstructed from public daily prices by the scripts
+released with this paper, which also contain the evaluation stack, the
+calibration tests, and every table and figure in this manuscript.
+
+\bibliographystyle{plainnat}
+\bibliography{refs,refs_generated}
+
+\appendix
+\input{sections/A_reproducibility}
+
+\end{document}

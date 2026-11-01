@@ -1,0 +1,122 @@
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Quantum machine learning for financial prediction.}
+Reports of quantum models for forecasting and stock selection range from
+clear positives on synthetic data --- a 96-parameter circuit matching
+thousands-parameter BiLSTMs on noisy sinusoids \citep{emmanoulopoulos2022quantum}
+--- to mixed results on market data: a hybrid network beats a parameter-matched
+ANN on directional classification of single stocks, yet its recurrent variant
+wins on risk-adjusted returns in only two of four S\&P~500 regimes under
+identical walk-forward splits \citep{ahmad2026quantum}; on OHLCV data no
+model beats the naive baseline intraday and quantum models merely match
+classical ones daily \citep{shah2026stock}; and adding quantum layers to a
+Transformer degrades performance on most tasks \citep{chen2025quantumd}. The
+two studies closest to ours are both controlled negatives on the equity
+cross-section. On TOPIX500 over a ten-year rolling backtest the quantum neural
+network is inferior to its classical counterpart over the whole period
+\citep{kobayashi2023cross}. On China A-shares, a kernel-swap design that holds
+subsamples, solver and tuning budget fixed finds the fidelity quantum kernel
+indistinguishable from an RBF control ($\Delta\mathrm{IC}=+0.005$, $p=0.42$)
+over 170 walk-forward windows, with no pairwise difference among eleven models
+surviving family-wise correction --- and shows that a 60-window evaluation on a
+hindsight-screened universe makes the same kernel look dominant
+\citep{shen2026quantum}. That paper's diagnosis of the applied literature ---
+short samples, hindsight universes, weak baselines --- and its proposed
+standards (kernel-swap controls, budget-equalised comparisons, point-in-time
+universes, multiplicity-robust inference) are the ones our protocol adopts. The
+reference QTCNN study we audit \citep{chen2025quantumb} reports an annualised
+out-of-sample Sharpe ratio of \num{0.538} $\pm$ \num{0.042} over a 22-day
+window, acknowledges that 22 days give limited power, and defers a full-sample
+backtest to future work; its own encoder-only ablation scores \num{0.412},
+which already places most of the reported edge in the classical encoder.
+
+\paragraph{QCNN trainability and dequantisation.}
+Randomly initialised parametrised circuits generically exhibit barren
+plateaus \citep{mcclean2018barren,larocca2024barren}; global cost functions
+induce them even at shallow depth whereas local observables keep gradients
+polynomial up to depth $O(\log n)$ \citep{cerezo2021cost}, hardware noise
+induces its own plateau \citep{wang2021noise}, and data embeddings add a
+dataset-induced variant \citep{thanasilp2021subtleties}. The QCNN of
+\citet{cong2019quantum} avoids the problem: its gradient variance vanishes at
+most polynomially, and sharing parameters across a layer, as in the original
+design, enlarges the variance further \citep{pesah2020absence}. Our
+gradient-variance and expressibility scans (Section~\ref{sec:results}) are the
+empirical counterpart of these guarantees for the ansatz we use. The guarantee
+cuts both ways. Randomly initialised QCNNs act only on low-weight information
+about their inputs, and a classical surrogate built from Pauli propagation
+matches or beats them on every benchmark up to 1024 qubits
+\citep{bermejo2024quantum}; more generally, the structure that removes barren
+plateaus tends to confine the model to a classically simulable subspace
+\citep{cerezo2023provable}. Classical surrogates that reproduce a trained
+circuit's input--output map are therefore the natural benchmark a quantum model
+must beat \citep{schreiber2022classical}; random-Fourier-feature surrogates can
+be built from the architecture alone \citep{landman2022classically}; wide
+random circuits converge to Gaussian processes and stay there under training
+\citep{girardi2024trained}; and in the kernel view the optimal model is a convex
+problem \citep{schuld2021quantum}. Our \textsc{Frozen} and \textsc{Surrogate}
+conditions operationalise this random-feature reading: if the trained circuit
+is no better than a frozen one, and the frozen one no better than a classical
+map of equal parameter count, the layer is a random feature and the
+dequantisation argument applies without further analysis. Related diagnostics
+warn against reading performance as evidence of quantum effects: hybrid
+networks show no consistent expressibility--trainability relation
+\citep{kashif2026rethinking}, a fixed encoding can impose a capacity ceiling
+that mimics a plateau \citep{pandey2026architectural}, current models fit random
+labels so uniform generalisation bounds are vacuous
+\citep{gilfuster2023understanding}, and a causal-mediation analysis finds
+quantum-mediated effects averaging \SI{0.82}{\percent} with \SI{93}{\percent} of
+configurations in a neutral regime \citep{kesiku2026quantum}.
+
+\paragraph{Benchmarking practice in hybrid quantum ML.}
+Systematic benchmarks find prototypical classical baselines beating
+prototypical quantum models, with entanglement removable at no cost and only
+one paper in the authors' literature sample drawing critical conclusions from
+its own results \citep{bowles2024better}; an industrial comparison finds
+classical and hybrid models statistically equivalent, with accuracy
+uncorrelated with entangling power \citep{basilewitsch2024quantum}. Budget-aware
+protocols that match trainable parameters and optimisation steps find shallow
+hybrids matching classical performance at much higher cost
+\citep{bendouma2026fair}, whereas a same-accuracy-threshold comparison reports
+hybrids scaling FLOPs more efficiently \citep{kashif2024computational}. The
+attribution audit of \citet{gillani2026quantum} --- parameter-matched classical
+controls sharing the identical front-end, a random-feature kernel, a
+regularisation sweep, three to five seeds with confidence intervals, and the
+explicit stance that the benchmark's value does not depend on quantum winning
+--- is the closest methodological template to ours; the capacity-matched
+bottleneck of \citet{chen2025quantumd} follows the same commitment. Shot
+budgets are the operative hardware cost, since access is priced per shot
+\citep{liu2025you} and gradient estimation needs two circuit runs per parameter
+per iteration \citep{scriva2023challenges,miroszewski2024search}; batched
+parameter broadcasting is what removes per-call simulator overhead
+\citep{chen2025batched}.
+
+\paragraph{Evaluation methodology in empirical finance.}
+A handful of trials suffices to find a spuriously high backtested Sharpe ratio
+\citep{bailey2014pseudo}, calibrating rules by backtest itself overfits
+\citep{carr2014determining}, and standard holdout is unreliable, motivating the
+Deflated Sharpe Ratio \citep{bailey2014deflated} and the combinatorially
+symmetric estimate of the probability of backtest overfitting
+\citep{bailey2017probability} that we report. Adaptive specification search
+produces significant backtests under martingale-difference nulls, and effective
+multiplicity rather than the nominal specification count sets the expected
+in-sample maximum \citep{nikolopoulos2026spurious}; publication selects for
+author and sampling error alike \citep{chen2022publication}. Multiple-testing
+control in the cross-section is contested in magnitude --- 93\% of
+trading-friction anomalies fail replication and microcaps drive equal-weighted
+results in \citet{hou2020replicating}, while a Bayesian replication finds the
+majority of factors survive \citep{jensen2021there} --- but not in principle,
+which is why we apply Romano--Wolf step-down control \citep{romano2005stepwise}
+across every contrast. Leakage inflates out-of-sample performance while
+preserving the appearance of rigour \citep{bhand2026illusion}; a one-switch
+benchmark shows chronological splitting alone is insufficient and fixes
+decision-time semantics as features known by the close of day~$t$ and execution
+at the $t{+}1$ open \citep{zhang2026alpha}, which is the convention our
+target definition and embargo follow. Transaction costs are decisive at daily
+turnover: technical rules that pass an SPA test in sample do not survive
+moderate costs \citep{rink2023predictive}, 73.3\% directional accuracy
+coexists with a post-cost loss at 471 trades per year \citep{pall2026transaction},
+and a systematic falsification of fourteen intraday signal families finds none
+passing a $t\ge 2$, $\ge 30$-trade, net-positive standard
+\citep{mesfin2026structural}. Our cost curves and break-even analysis are the
+corresponding checks for a cross-sectional long--short book.

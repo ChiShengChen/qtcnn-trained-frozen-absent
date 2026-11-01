@@ -1,0 +1,65 @@
+\section{Introduction}
+\label{sec:intro}
+
+% Framing: the field's evidentiary problem, not just "we propose a model".
+\paragraph{Motivation.}
+Hybrid quantum--classical models are increasingly proposed for financial
+prediction, and the reported advantages are typically large: the reference
+study this work audits reports a Sharpe ratio \SI{72}{\percent} above its best
+classical baseline \citep{chen2025quantumb}. Yet the applied literature
+shares three vulnerabilities --- short evaluation samples, universes assembled
+with hindsight, and weak baselines --- and controlled designs that fix
+everything but the quantum component find no advantage on the equity
+cross-section \citep{shen2026quantum,kobayashi2023cross}. Benchmarks outside
+finance reach the same conclusion: prototypical classical baselines beat
+prototypical quantum models, entanglement can be removed at no cost
+\citep{bowles2024better}, and where a quantum layer appears to help, a
+parameter-matched classical control usually helps as much
+\citep{gillani2026quantum}. At the same time, the finance literature has
+developed tools --- the Deflated Sharpe Ratio, the probability of backtest
+overfitting, multiplicity-robust inference, decision-time leakage audits ---
+that the quantum finance literature has not yet adopted; no study in our
+literature search reports any of them for a quantum model.
+
+\paragraph{This is a self-audit.}
+The reference study whose result this paper re-examines is our own
+\citep{chen2025quantumb}. We state that at the outset because it determines how
+the rest should be read. The protocol below was not assembled to test someone
+else's claim; it was assembled to test a claim we had already published, and it
+returned the opposite answer. Nothing in the analysis depends on that fact ---
+the conditions, the windows and the tests are specified in advance of the
+result and the data and code are released --- but a reader is entitled to know
+that the paper's critical findings are directed at its own authors' prior work
+rather than at a third party's. A literature search of \num{2107} deduplicated
+records for this paper found a single study that drew critical conclusions from
+its own empirical results \citep{bowles2024better}; we would rather add to that
+count than to the other one.
+
+\paragraph{The identification problem.}
+A hybrid model typically routes both a quantum score and the classical encoder
+representation into a shared head. When such a model outperforms a baseline, the
+result is consistent with at least four explanations: the circuit learned a
+useful nonlinearity; the circuit acts as a fixed random feature; the classical
+encoder did all the work; or the difference is sampling noise. Distinguishing
+them requires control conditions, not a larger table of baselines.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+  \item A controlled ablation that isolates the quantum contribution into four
+    conditions --- trained circuit, frozen circuit, parameter-matched classical
+    surrogate, and no circuit --- trained through an identical code path.
+  \item An evaluation protocol for cross-sectional ranking that reports
+    annualised metrics on \num{500} walk-forward out-of-sample days with
+    bootstrap confidence intervals, Deflated Sharpe Ratios, backtest-overfitting
+    probabilities and multiple-comparison control.
+  \item A batched formulation of the quantum convolutional layer that reproduces
+    the per-sample implementation exactly in double precision while running
+    \num{33} to \num{72} times faster depending on batch size, which is what
+    makes full-sample walk-forward evaluation tractable.
+  \item A re-evaluation of our own previously published result
+    \citep{chen2025quantumb} on \num{241} out-of-sample days rather than the
+    \num{22} it reported, which decomposes the advantage it claimed into four
+    identifiable sources, one of which is a split adjustment applied in the
+    wrong temporal direction that leaves more artefactual returns than
+    performing no adjustment at all.
+\end{enumerate}

@@ -1,0 +1,47 @@
+\section{Reproducibility}
+\label{sec:repro}
+
+\subsection{Software and hardware}
+Experiments ran on a 24-core workstation shared with unrelated jobs, under
+PennyLane 0.42.3, PyTorch 2.6.0, NumPy 1.26.4 and pandas 2.2.3 on Python
+3.12.9. Quantum circuits were simulated on the \texttt{default.qubit}
+state-vector backend with backpropagation. All reported models are trained on
+CPU: for an eight-qubit register the simulator is CPU-bound, and a GPU gives no
+benefit.
+
+\paragraph{Measurement under contention.}
+Wall-clock figures are sensitive to what else the machine is running. The same
+training step measured \SI{16.4}{\second} at a one-minute load average of 57 on
+24 cores and \SI{0.38}{\second} once the machine was scheduled, a factor of 43.
+Every timing reported here was taken through a job scheduler that admits work
+against declared CPU, RAM and VRAM, and the load at measurement time is
+recorded alongside the figure.
+
+\subsection{Determinism}
+Each (model, fold, seed) cell seeds PyTorch, NumPy and the training-set
+subsample from the same integer. Circuit parameters are initialised from a
+dedicated generator so that the \textsc{Frozen} condition draws exactly the same
+weights as the \textsc{Trained} condition's initialisation. Results are
+checkpointed per cell, so an interrupted sweep resumes without recomputing
+completed work and without changing any seed.
+
+\subsection{Data and code}
+The dataset is the public JPX Tokyo Stock Exchange
+panel~\citep{jpx2022competition}. The analysis code, including the evaluation
+statistics, the walk-forward protocol and the batched circuit, is released with
+the paper. The calibration checks reported in
+Section~\ref{sec:protocol:stats} --- in particular that the
+backtest-overfitting estimator returns \num{0.53(4)} on independent random
+strategies --- are part of the test suite.
+
+\subsection{Deviations from the reference implementation}
+The pipeline this work audits --- our own, as stated in
+Section~\ref{sec:intro} --- differs in four respects that materially affect its
+numbers, each corrected here: the split adjustment direction
+(Section~\ref{sec:data:adjustment}); the Sharpe ratio, which the released code
+computes as mean over standard deviation with no annualisation, though the
+published paper states that its metric is annualised; the evaluation window,
+which date subsampling reduced to \num{22} trading days; and the absence of
+transaction costs. Section~\ref{sec:results:reeval} reports the original models
+re-scored over \num{241} days with all four corrected, so that the difference
+is attributable rather than asserted.

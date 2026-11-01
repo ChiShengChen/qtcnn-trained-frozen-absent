@@ -1,0 +1,22 @@
+\begin{table}[t]
+\centering
+\caption{Out-of-sample performance on the pooled walk-forward track (\num{500} trading days, five seeds per condition). Confidence intervals are 95\% stationary bootstrap; DSR is the Deflated Sharpe Ratio deflated by the \num{50} configurations evaluated.}
+\label{tab:headline}
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Condition & Sharpe & 95\% CI & $p$ & DSR & Seed sd & Max DD \\
+\midrule
+QTCNN, no circuit & +0.013 & [-1.14, +1.18] & 0.99 & 0.01 & 0.45 & -0.190 \\
+QTCNN, classical surrogate & -0.040 & [-1.25, +1.05] & 0.94 & 0.01 & 0.32 & -0.144 \\
+QTCNN, frozen circuit & -0.071 & [-1.25, +1.04] & 0.90 & 0.01 & 0.30 & -0.149 \\
+QTCNN, trained circuit & -0.071 & [-1.25, +1.04] & 0.90 & 0.01 & 0.31 & -0.148 \\
+Transformer baseline & -0.139 & [-1.26, +1.00] & 0.81 & 0.01 & 0.21 & -0.148 \\
+MLP baseline & -0.149 & [-1.40, +1.00] & 0.79 & 0.01 & 0.36 & -0.135 \\
+TCN baseline & -0.237 & [-1.44, +0.93] & 0.69 & 0.00 & 0.26 & -0.154 \\
+QTCNN, circuit only & -0.251 & [-1.50, +0.85] & 0.65 & 0.00 & 0.26 & -0.170 \\
+LSTM baseline & -0.329 & [-1.50, +0.91] & 0.58 & 0.00 & 0.19 & -0.213 \\
+LightGBM baseline & -0.419 & [-1.72, +0.78] & 0.51 & 0.00 & 0.38 & -0.135 \\
+\bottomrule
+\end{tabular}
+\end{table}

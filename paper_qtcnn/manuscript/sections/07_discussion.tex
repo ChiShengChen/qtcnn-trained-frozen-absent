@@ -1,0 +1,167 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{What the ablation identifies}
+The four hybrid conditions were designed so that their pairwise contrasts each
+answer one question, and on this data every answer is the same.
+\textsc{Trained} against \textsc{Frozen} asks whether optimising the circuit
+matters: the per-cell Sharpe ratios correlate at \num{1.000}, so it does not.
+\textsc{Frozen} against \textsc{Surrogate} asks whether the particular random
+feature a quantum circuit computes is better than a classical one of equal
+parameter count and matching output scale: it is not. \textsc{Surrogate}
+against \textsc{None} asks whether any extra scalar feature helps the head at
+all: it does not. The circuit is a random feature, the random feature is not
+special, and the head does not need it.
+
+The same three contrasts give the same three answers on the US panel
+(Section~\ref{sec:results:us}), where gross performance is negative rather than
+positive. A result that survives a sign change in the underlying market is
+about the layer, not about the window.
+
+A referee will reasonably ask whether a null on a task where nothing works can
+say anything about the layer. The locked holdout is the positive control that
+answers it. On those \num{135} days the shared signal is profitable --- gross
+annualised Sharpe ratios run from \num{+0.72} to \num{+2.34} across the eight
+conditions --- and the ablation is unchanged there: trained beside frozen, the
+surrogate no worse than either, and no contrast significant. The circuit adds
+nothing in the regime where the features fail and nothing in the regime where
+they work.
+
+This is not a statement that quantum convolutional layers are useless. It is a
+statement about this task: daily cross-sectional ranking from twenty days of
+technical features, where the achievable information coefficient is around
+\num{0.006} and the between-seed variance of any model exceeds the
+between-model variance. A layer cannot demonstrate value in a regime where the
+signal it would need to improve on is itself indistinguishable from noise.
+
+\subsection{Why earlier numbers looked different}
+The reference study this work audits \citep{chen2025quantumb} reports an
+out-of-sample Sharpe ratio of \num{0.538} $\pm$ \num{0.042} for its quantum
+model, about \SI{72}{\percent} above its best classical baseline, and defines
+that ratio as annualised. Its accompanying public implementation, which is the
+artefact we re-ran, computes the ratio as mean over standard deviation with no
+$\sqrt{252}$ factor and yields \num{0.33} on the same window; on the
+conventional scale that is \num{5.2}. Whichever figure one takes, four things,
+each individually sufficient, separate it from Table~\ref{tab:headline}. It
+was computed on \num{22} trading days, a window over which the bootstrap
+interval spans several Sharpe units in either direction; the authors
+themselves note that \num{22} days give limited power and that about \num{45}
+would be needed for \SI{90}{\percent} power, and defer a full-sample backtest
+to future work. The headline is a single-seed model selection (noise
+experiments use five runs), and Figure~\ref{fig:seeds} shows the seed draw
+alone moving a fold's Sharpe by more than three units. The split adjustment
+ran forward in time, corrupting every momentum and volatility feature with
+artefactual returns of up to \num{2300}\%. And the paper's own encoder-only
+ablation already scores \num{0.412} $\pm$ \num{0.039}, so most of the reported
+edge over the Transformer baseline is the temporal encoder, not the circuit
+--- the same decomposition our \textsc{None} condition makes explicit. None of
+these is exotic; all are common in the applied quantum machine learning
+literature \citep{shen2026quantum,bowles2024better}, where evaluation practice
+has not yet caught up with the standards of empirical finance.
+
+\subsection{The circuit is trainable; that is not the problem}
+The diagnostics rule out the explanation a quantum-computing reader would reach
+for first. Gradient variance is flat from two to twelve qubits, so there is no
+barren plateau; expressibility improves with depth, so the ansatz is not
+degenerate; the rank of its outputs survives depolarising and amplitude-damping
+noise at rates well above current hardware. The layer could be trained, and it
+could be run. It simply has nothing to contribute here that the classical
+encoder around it does not already provide.
+
+\subsection{What a deployment would actually cost}
+Because the strategy consumes a ranking, the operative hardware question is how
+many shots preserve rank order at the spread of the scores being ranked. That
+spread is small: a trading date's circuit outputs have a standard deviation of
+\num{0.018}, because cross-sectional normalisation and the encoder map a day's
+securities into a narrow band of angles. Preserving the ranking to a Spearman
+correlation of \num{0.99} then takes about \num{32768} shots per security, or
+roughly $7\times10^{7}$ circuit executions to score \num{2000} securities for
+one trading day; \num{0.997} takes four times that. Gate noise remains
+negligible at those budgets --- sampling accounts for essentially all of the
+degradation --- so the cost is set by measurement statistics alone.
+
+We make no claim about whether a present device sustains that rate, and the
+comparison that matters is not with a device specification but with the
+classical alternative: the same ranking is produced by a parameter-matched
+classical map in microseconds, and by no map at all equally well. The honest
+conclusion is therefore narrower than the one a circuit-level scan would
+support. It is not that hardware is no obstacle; it is that the obstacle is
+mis-stated when the shot budget is measured on random inputs, and that on this
+task the observable is concentrated enough to make ranking expensive even at
+eight qubits. Whether that concentration is intrinsic to cross-sectional
+ranking or an artefact of this encoder is the question we would put first in
+any follow-up.
+
+\subsection{Threats to validity}
+\label{sec:discussion:threats}
+We list the ways this study could be wrong, in decreasing order of how much
+they would change the conclusion.
+
+\paragraph{One feature set, chosen by us.}
+All ten conditions see the same \num{21} technical features. If the quantum
+layer has an inductive bias suited to structure these features do not contain
+--- fundamentals, order-flow, cross-asset signals --- the null is a statement
+about the inputs rather than the layer. Nothing in the design can rule this
+out, and it is the most likely way the result fails to generalise.
+
+\paragraph{Two ansatz families, one of them resolved finely.}
+The QCNN (angle embedding, shared two-qubit blocks, pooling, single-wire
+measurement) and a re-uploading circuit with a CNOT ring and a global
+observable give the same ordering, but only the first is certified equivalent
+to its frozen copy inside \num{0.03} Sharpe; the second is bounded at
+\num{0.25}, because its global observable lets the parameters reach the
+score and the paired standard error grows twelvefold. A family in which
+training the circuit helps may exist; neither of these two is it, and the
+second shows that a looser bound is what a more expressive circuit buys here.
+
+\paragraph{Low achievable signal.}
+The information coefficient available on this task is around \num{0.006}
+(Table~\ref{tab:ic}), and the between-seed variance exceeds every
+between-condition difference. A layer cannot demonstrate value where the signal
+it would improve on is itself indistinguishable from noise. The locked holdout
+is the partial answer: on a window where the shared signal does pay, the
+ablation is unchanged. It is \num{135} days, which is short by this paper's own
+standard. The gradient-boosted baseline is the other partial answer: the model
+family that wins this competition extracts an information coefficient of
+\num{0.005} from the same features, no more than the networks, so the weak
+signal is a property of the inputs rather than of the architectures.
+
+\paragraph{Statistical resolution.}
+The design resolves the trained-versus-frozen contrast to a margin of
+\num{0.03} Sharpe and the contrasts against the no-circuit control only to
+\num{0.50}. The second of those is a weak bound and we do not claim more from
+it. Four folds and five seeds give twenty paired cells, which is enough for the
+first comparison and not for the others.
+
+\paragraph{Simulation only.}
+Every circuit result is from a state-vector simulator. The noise scans are
+simulated channels, not device runs, and the shot analysis assumes independent
+sampling. No claim here has been checked on hardware.
+
+\paragraph{Survivorship in the auxiliary panels.}
+The US universe comes from a current exchange symbol directory and excludes
+firms delisted before it; the \num{2022}--\num{2025} JPX extension is missing
+\num{207} of the \num{2000} universe securities, of which the exchange's
+official delisting lists account for all: \num{204} left through takeovers,
+management buy-outs or squeeze-outs, one failed the listing-maintenance
+standards, one was removed by the exchange and one delisted voluntarily. Both
+biases are common to every condition and so do not enter any contrast, but
+absolute performance levels on those panels are not claimed. The US panel also
+required a point-in-time price screen to remove a bankruptcy-reorganisation
+splice (Section~\ref{sec:data-us}); we found it by auditing for impossible
+returns, and a study that did not audit would not have found it.
+
+\paragraph{Fold count.}
+Four walk-forward folds are what the JPX sample supports; a fifth would need
+\num{44} more trading days than exist. The US calendar affords five.
+
+\subsection{What would change the conclusion}
+A positive result would require a task where the circuit's inductive bias
+matches structure in the data that the classical encoder cannot express. The
+present data has no such structure to find: the best any model achieves is a
+signal that a \SI{4}{bps} transaction cost removes. Claims of quantum
+advantage in financial prediction should be accompanied by the control
+conditions used here --- a frozen circuit and a parameter-matched surrogate at
+minimum --- and by an evaluation long enough to resolve the effect being
+claimed. Where they are, we expect most of them to look like
+Table~\ref{tab:headline}.

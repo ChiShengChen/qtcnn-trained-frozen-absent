@@ -1,0 +1,28 @@
+# Ignore Python cache and virtualenvs
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+.venv/
+venv/
+env/
+
+# Ignore data directories and dataset archives
+data/
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.bz2
+
+# Ignore outputs (can be large); comment out if you want to version them
+outputs/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+

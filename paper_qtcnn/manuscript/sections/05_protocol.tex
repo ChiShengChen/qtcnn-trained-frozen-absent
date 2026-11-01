@@ -1,0 +1,124 @@
+\section{Evaluation protocol}
+\label{sec:protocol}
+
+\subsection{Walk-forward folds}
+\label{sec:protocol:folds}
+The development period, 2017-02-02 to 2021-12-03, holds \num{1161} trading
+days and is divided into four rolling-origin folds. Each fold trains on
+\num{500} trading days, selects on the following \num{60}, discards an embargo
+of \num{20}, and tests on the next \num{125}. A fifth fold would need
+\num{1205} days and is therefore not available. The embargo matters because features use rolling windows of up to
+\num{20} days: without it, the input windows of the first test days overlap the
+last training days. Test blocks are disjoint by construction, so their return
+series concatenate into a single continuous out-of-sample track of \num{500}
+trading days.
+
+Rolling rather than anchored windows keep the training sample size constant
+across folds, which separates regime effects from sample-size effects.
+
+\subsection{Labels}
+\label{sec:protocol:labels}
+Within each training date the \num{200} securities with the lowest realised
+forward return are labelled $0$ and the \num{200} highest are labelled $1$. The
+task is ranking rather than level prediction, and the middle of the
+cross-section carries almost no separable signal, so training on the tails gives
+a cleaner decision boundary than regression on all names.
+
+\subsection{Training}
+\label{sec:protocol:training}
+Every condition is trained by the same loop: AdamW (learning rate \num{e-3},
+weight decay \num{e-4}) under a cosine schedule over a budget of \num{30}
+epochs, batches of \num{512}, gradient norm clipped at \num{1}, binary
+cross-entropy on the extreme labels, and a random subsample of \num{60000}
+labelled sequences per fold drawn by the seed. Early stopping monitors the
+validation AUC with a patience of six epochs and restores the best weights; on
+the walk-forward folds it halts after \num{9.9} epochs on average. Because that
+could be read as never giving the circuit time to matter, both circuit
+conditions are also run with early stopping disabled, for the full
+\num{30} epochs (Section~\ref{sec:results:ablation}).
+
+\subsection{Portfolio construction}
+Model outputs are standardised within each trading date, restricted to names
+that are in the primary universe, not under supervision, and have positive close
+and volume, and the top and bottom \num{200} are held long and short with equal
+weights. The daily strategy return is the spread between the two legs.
+
+\subsection{Statistics}
+\label{sec:protocol:stats}
+All Sharpe and Sortino ratios are annualised by $\sqrt{252}$. Information
+coefficients are the within-date Spearman correlations between score and
+realised forward return; because that series is autocorrelated, its mean is
+tested with Newey--West standard errors at the automatic lag
+$4(n/100)^{2/9}$~\citep{newey1987simple,newey1994automatic}. Confidence intervals for the Sharpe
+ratio come from a stationary bootstrap with mean block length
+\num{10}~\citep{politis1994stationary}, which brackets the automatic selection
+of \citet{politis2004automatic} on these series; the null is imposed on the
+return series by demeaning it before resampling, rather than by re-centring the
+bootstrap draws of the statistic, because the latter assumes a symmetric
+sampling distribution that a skewed return series does not have.
+
+A non-significant difference is not evidence of no difference, so every null
+claim below is accompanied by the two statistics that make it interpretable.
+The minimum detectable effect is the smallest true difference the design would
+have found at \SI{80}{\percent} power given its standard error. Equivalence is
+assessed by two one-sided tests against a stated
+margin~\citep{schuirmann1987comparison}, applied to the paired bootstrap
+distribution of the Sharpe difference; a significant result there is positive
+evidence that the difference lies inside the margin. We pre-specify a margin of
+\num{0.03} annualised Sharpe for the trained-versus-frozen contrast, which is
+the comparison the design is powered to resolve, and report the wider margins
+the other contrasts require rather than claiming equivalence at a margin the
+data cannot support.
+
+Two further statistics guard against the selection bias that a study comparing
+several model variants necessarily incurs. The Deflated Sharpe
+Ratio~\citep{bailey2014deflated} discounts the observed Sharpe by the expected
+maximum across the number of configurations searched, which we report
+explicitly. The probability of backtest overfitting~\citep{bailey2017probability}
+is estimated by combinatorially symmetric cross-validation over the candidate
+set; our implementation returns \num{0.53(4)} on independent random strategies,
+consistent with the uninformative value of \num{0.5}.
+
+Pairwise contrasts use the Diebold--Mariano test on the difference of daily
+return series~\citep{diebold1995comparing}, with the small-sample correction of
+\citet{harvey1997testing} because a window of a few hundred days is short for
+the normal approximation. That statistic tests a difference in mean return,
+which is not the hypothesis the tables are ordered on, so each contrast is also
+tested directly on the difference of Sharpe ratios by a paired stationary
+bootstrap that resamples both tracks on the same days.
+
+Family-wise error is controlled by the Romano--Wolf stepdown
+procedure~\citep{romano2005stepwise}, which is far less conservative than
+Bonferroni at this number of comparisons. We state the family explicitly: it is
+the set of contrasts against the no-circuit control on one panel, seven
+hypotheses. It does not cover the eight tests of each condition against zero,
+and it is not pooled across the two markets or the holdout; those are reported
+uncorrected and should be read as such.
+
+\subsection{Quantile portfolios}
+\label{sec:protocol:quantiles}
+The information coefficient is a rank correlation over the whole
+cross-section, whereas the long/short book holds only the two tails. The two
+can therefore disagree, and on this dataset they do: in the reference
+implementation the model with the lowest IC has the highest Sharpe
+(Section~\ref{sec:results}). We therefore report decile portfolios --- the mean
+forward return of each score decile with Newey--West $t$-statistics, the
+top-minus-bottom spread, and the Spearman correlation between decile index and
+mean return as a monotonicity measure. A signal with a high IC but low
+monotonicity does not belong in a tail-based long/short book, and saying so is
+more useful than reporting either statistic alone.
+
+\subsection{Transaction costs}
+\label{sec:protocol:costs}
+Turnover is the fraction of each leg replaced between consecutive rebalances.
+Net returns charge a round-trip cost on the traded fraction of both legs, and we
+report Sharpe ratios on a grid of \numlist{0;5;10;20;30;50} basis points
+together with the break-even cost at which the mean net return reaches zero.
+Reporting gross performance alone is not meaningful for a daily-rebalanced
+book: on the reference implementation's own output, turnover averages 24\% per
+day and the break-even cost is \SI{7.4}{bps}.
+
+\subsection{Locked holdout}
+The supplemental window, 2021-12-06 to 2022-06-24 (\num{135} trading days), is
+evaluated exactly once, after every architectural and hyperparameter decision is
+frozen. It spans a market regime absent from the development period.

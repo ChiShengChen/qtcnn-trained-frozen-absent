@@ -1,0 +1,18 @@
+\begin{table}[t]
+\caption{Diebold-Mariano contrasts against the no-quantum control for the US panel.}
+\label{tab:ablation-us}
+\begin{tabular}{llrrrrrrr}
+\toprule
+model & reference & sharpe\_model & sharpe\_reference & mean\_diff & se\_nw & dm\_stat & p\_value & n \\
+\midrule
+lightgbm & qtcnn\_noquantum & -0.672 & -1.240 & 0.001 & 0.000 & 2.044 & 0.041 & 625 \\
+lstm & qtcnn\_noquantum & -0.846 & -1.240 & 0.000 & 0.000 & 0.815 & 0.415 & 625 \\
+mlp & qtcnn\_noquantum & -0.830 & -1.240 & 0.000 & 0.000 & 1.697 & 0.090 & 625 \\
+qtcnn\_frozen & qtcnn\_noquantum & -1.431 & -1.240 & -0.000 & 0.000 & -1.090 & 0.276 & 625 \\
+qtcnn\_surrogate & qtcnn\_noquantum & -1.244 & -1.240 & -0.000 & 0.000 & -0.151 & 0.880 & 625 \\
+qtcnn\_trained & qtcnn\_noquantum & -1.435 & -1.240 & -0.000 & 0.000 & -1.128 & 0.260 & 625 \\
+tcn & qtcnn\_noquantum & -1.508 & -1.240 & -0.000 & 0.000 & -0.435 & 0.664 & 625 \\
+transformer & qtcnn\_noquantum & -0.839 & -1.240 & 0.000 & 0.000 & 0.852 & 0.394 & 625 \\
+\bottomrule
+\end{tabular}
+\end{table}

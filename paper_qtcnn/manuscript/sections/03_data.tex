@@ -1,0 +1,95 @@
+\section{Data}
+\label{sec:data}
+
+We use the JPX Tokyo Stock Exchange daily price panel, covering
+\num{2000} securities. The training file spans 2017-01-04 to 2021-12-03 and the
+supplemental file continues to 2022-06-24; after feature construction the
+usable panel holds \num{2483470} security-days over \num{1296} trading dates
+from 2017-02-02.
+
+\subsection{Split adjustment}
+\label{sec:data:adjustment}
+The panel records a per-day \texttt{AdjustmentFactor}. A factor of $0.5$ on day
+$t$ indicates that prices up to and including $t$ must be halved to be
+comparable with prices after $t$, so the cumulative factor at date $t$ is the
+product of all factors from $t$ onwards:
+\begin{equation}
+  \tilde{P}_t = P_t \prod_{s \ge t} a_s .
+\end{equation}
+Publicly circulated pipelines for this dataset instead accumulate forward,
+$\prod_{s \le t} a_s$. Table~\ref{tab:adjustment} shows the consequence over the
+\num{610} securities with at least one non-unit factor.
+
+\begin{table}[t]
+\centering
+\caption{Artefactual daily moves under three adjustment conventions.}
+\label{tab:adjustment}
+\begin{tabular}{lrrr}
+\toprule
+Adjustment & $|r|>30\%$ & $|r|>50\%$ & $\max |r|$ \\
+\midrule
+None (raw closes)            & 718  & 565  & 20.09 \\
+Forward cumulative product   & 1418 & 1091 & 23.43 \\
+Backward cumulative product  & \textbf{16} & \textbf{3} & \textbf{1.12} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Features}
+Twenty-one per-security features are computed from the adjusted close $\tilde P_t$,
+the daily return $r_t=\tilde P_t/\tilde P_{t-1}-1$, the raw volume $V_t$ and the
+dollar volume $D_t=P_tV_t$ (Table~\ref{tab:features}). Every window looks
+strictly backwards, so a feature dated $t$ uses closes up to and including $t$
+only. The set is deliberately generic --- momentum, realised volatility,
+standardised returns, liquidity, range position, drawdown and RSI --- so that
+no model has access to information the others lack.
+
+\begin{table}[t]
+  \centering
+  \caption{The 21 input features. All rolling statistics use a window of
+  exactly $n$ trading days and are undefined until $n$ observations exist.}
+  \label{tab:features}
+  \begin{tabular}{llc}
+    \toprule
+    Group & Definition & $n$ \\
+    \midrule
+    Momentum ($\mathrm{mom}_n$) & $\tilde P_t/\tilde P_{t-n}-1$ & 1, 2, 5, 10, 20 \\
+    Volatility ($\mathrm{vol}_n$) & rolling standard deviation of $r$ & 5, 10, 20 \\
+    Standardised return ($\mathrm{ret\_z}_n$) & $(r_t-\bar r_n)/\sigma_n(r)$ & 5, 10, 20 \\
+    Log volume & $\log(1+V_t)$ & --- \\
+    Log dollar volume & $\log(1+D_t)$ & --- \\
+    Dollar-volume $z$-score ($\mathrm{dv\_z}_n$) & rolling $z$-score of $\log(1+D_t)$ & 5, 10, 20 \\
+    Range position ($\mathrm{pos}_n$) & $(\tilde P_t-\min_n)/(\max_n-\min_n)$ & 10, 20 \\
+    Drawdown ($\mathrm{dd}_{20}$) & $\tilde P_t/\max_{20}-1$ & 20 \\
+    RSI ($\mathrm{rsi}_n$) & RSI, simple-moving-average form, rescaled to $[-0.5,0.5]$ & 7, 14 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Cross-sectional normalisation}
+Each feature is winsorised at the 1st and 99th percentile and standardised
+within each trading date. Both operations use only same-day information and
+therefore introduce no look-ahead.
+
+\subsection{Second market}
+\label{sec:data-us}
+To test whether the result is a property of one exchange, the identical
+pipeline is run on United States common stocks over the same calendar window.
+Candidates are the \num{4826} NYSE, NYSE American and Nasdaq common stocks in
+the exchange symbol directories after removing ETFs, warrants, units, rights,
+preferred shares, notes, depositary receipts, trusts and acquisition shells by
+name; \num{3935} of them traded in the window. The universe is the \num{2000}
+names with the highest median dollar volume in 2017, the first calendar year,
+among those with at least \num{200} trading days and a median close of at least
+\$2 that year, so selection uses no information after the first training
+window. Split-adjusted closes and volumes come from the same public source and
+convention as the JPX extension; the target, the 21 features and the
+cross-sectional normalisation are computed by the same functions. The panel
+holds \num{2796919} security-days over \num{1399} trading dates from
+2016-11-30 to 2022-06-22. Because the US calendar has more trading days, the
+development period yields five walk-forward folds (\num{625} out-of-sample
+days) rather than four; the holdout window is the same. The symbol directory
+is a current snapshot, so names delisted before it are absent; every condition
+is trained and scored on this identical panel, so the survivorship bias is
+common to all conditions and does not enter the contrasts between them,
+and absolute performance levels on this market are not claimed.
