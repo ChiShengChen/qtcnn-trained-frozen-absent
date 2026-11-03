@@ -229,6 +229,14 @@ PAPER_LABELS = {
 }
 
 
+def _fmt_p(p: float) -> str:
+    """Two decimals, but three below 0.1 so a value is never printed as 0.05
+    when it lies on the other side of the threshold."""
+    if not np.isfinite(p):
+        return "--"
+    return f"{p:.3f}" if p < 0.1 else f"{p:.2f}"
+
+
 def paper_headline_table(head: pd.DataFrame, path: Path, n_days: int, n_trials: int,
                          market: str = "", label: str = "tab:headline") -> None:
     """Publication layout of the headline table: readable headers, sorted."""
@@ -253,7 +261,7 @@ def paper_headline_table(head: pd.DataFrame, path: Path, n_days: int, n_trials: 
         lines.append(
             f"{name} & {r['sharpe_ann']:+.3f} & "
             f"[{r['sharpe_ci_low']:+.2f}, {r['sharpe_ci_high']:+.2f}] & "
-            f"{r['sharpe_p_value']:.2f} & {r['dsr_dsr']:.2f} & "
+            f"{_fmt_p(r['sharpe_p_value'])} & {r['dsr_dsr']:.2f} & "
             f"{r['sharpe_seed_std']:.2f} & {r['max_drawdown']:.3f} \\\\"
         )
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]

@@ -7,8 +7,9 @@ answer one question, and on this data every answer is the same.
 \textsc{Trained} against \textsc{Frozen} asks whether optimising the circuit
 matters: the per-cell Sharpe ratios correlate at \num{1.000}, so it does not.
 \textsc{Frozen} against \textsc{Surrogate} asks whether the particular random
-feature a quantum circuit computes is better than a classical one of equal
-parameter count and matching output scale: it is not. \textsc{Surrogate}
+feature a quantum circuit computes differs from a classical one of equal
+parameter count and matching output scale: on no panel can the two be told
+apart, and the sign of the difference changes between panels. \textsc{Surrogate}
 against \textsc{None} asks whether any extra scalar feature helps the head at
 all: it does not. The circuit is a random feature, the random feature is not
 special, and the head does not need it.
@@ -18,20 +19,20 @@ The same three contrasts give the same three answers on the US panel
 positive. A result that survives a sign change in the underlying market is
 about the layer, not about the window.
 
-A referee will reasonably ask whether a null on a task where nothing works can
-say anything about the layer. The locked holdout is the positive control that
-answers it. On those \num{135} days the shared signal is profitable for all
+A null result on a task where nothing works might say little about the layer.
+The locked holdout is the positive control for that concern. On those \num{135} days the shared signal is profitable for all
 nine conditions, with gross annualised Sharpe ratios from \num{+0.42} (MLP)
 to \num{+1.83} (the no-circuit control), and the ablation is unchanged there: trained beside frozen, the
 surrogate no worse than either, and no contrast significant. The circuit adds
 nothing in the regime where the features fail and nothing in the regime where
 they work.
 
-This is not a statement that quantum convolutional layers are useless. It is a
-statement about this task: daily cross-sectional ranking from twenty days of
+The result does not show that quantum convolutional layers are useless. It
+concerns this task: daily cross-sectional ranking from twenty days of
 technical features, where the achievable information coefficient is around
-\num{0.006} and the between-seed variance of any model exceeds the
-between-model variance. A layer cannot demonstrate value in a regime where the
+\num{0.006} and the spread of one model's Sharpe ratio across seeds
+(standard deviation \numrange{0.13}{0.61}) is as large as the spread between
+models (\num{0.17}). A layer cannot demonstrate value in a regime where the
 signal it would need to improve on is itself indistinguishable from noise.
 
 \subsection{Why earlier numbers looked different}
@@ -48,8 +49,9 @@ interval spans several Sharpe units in either direction; the authors
 themselves note that \num{22} days give limited power and that about \num{45}
 would be needed for \SI{90}{\percent} power, and defer a full-sample backtest
 to future work. The headline is a single-seed model selection (noise
-experiments use five runs), and Figure~\ref{fig:seeds} shows the seed draw
-alone moving a fold's Sharpe by more than three units. The split adjustment
+experiments use five runs), and the seed draw alone moves a fold's Sharpe by
+up to \num{2.2} units for the two conditions in Figure~\ref{fig:seeds} and by
+\num{4.39} for LightGBM. The split adjustment
 ran forward in time, corrupting every momentum and volatility feature with
 artefactual returns of up to \num{2300}\%. And the paper's own encoder-only
 ablation already scores \num{0.412} $\pm$ \num{0.039}, so most of the reported
@@ -64,7 +66,7 @@ for first. Gradient variance is flat from two to twelve qubits, so there is no
 barren plateau; expressibility improves with depth, so the ansatz is not
 degenerate; the rank of its outputs survives depolarising and amplitude-damping
 noise at rates well above current hardware. The layer could be trained, and it
-could be run. It simply has nothing to contribute here that the classical
+could be run. It has nothing to contribute here that the classical
 encoder around it does not already provide.
 
 \subsection{What a deployment would actually cost}
@@ -72,21 +74,21 @@ Because the strategy consumes a ranking, the operative hardware question is how
 many shots preserve rank order at the spread of the scores being ranked, and
 that spread is set by the trained model, not by the circuit. Across the twenty
 trained cells the within-date standard deviation of the circuit output runs
-from \num{0.006} to \num{0.49}, with a median of \num{0.10}, because
+from \num{0.007} to \num{0.51}, with a median of \num{0.10}, because
 cross-sectional normalisation and the encoder map a day's securities into a
 band of angles whose width the training trajectory decides. Preserving the
 ranking to a Spearman correlation of \num{0.99} takes about \num{8192} shots
-per security at the median cell, roughly $2\times10^{6}$ circuit executions to
-score \num{2000} securities for one trading day, and more than \num{131072}
-at the narrowest cells; the \num{256} a scan on random inputs suggests is
-reached only by the widest. Gate noise remains negligible at those budgets
+per security at the median cell, roughly $1.6\times10^{7}$ circuit executions
+to score \num{2000} securities for one trading day, and more than
+\num{131072} at the narrowest cells; the \num{256} a scan on random inputs
+suggests is reached by no cell, and the widest need \num{1024}. Gate noise remains negligible at those budgets
 (sampling accounts for essentially all of the degradation), so the cost is set
 by measurement statistics alone.
 
 We make no claim about whether a present device sustains that rate, and the
 comparison that matters is not with a device specification but with the
 classical alternative: the same ranking is produced by a parameter-matched
-classical map in microseconds, and by no map at all equally well. The honest
+classical map in microseconds, and by no map at all equally well. The
 conclusion is therefore narrower than the one a circuit-level scan would
 support. It is not that hardware is no obstacle; it is that the obstacle is
 mis-stated when the shot budget is measured on random inputs, or on one
@@ -121,8 +123,8 @@ second shows that a looser bound is what a more expressive circuit buys here.
 
 \paragraph{Low achievable signal.}
 The information coefficient available on this task is around \num{0.006}
-(Table~\ref{tab:ic}), and the between-seed variance exceeds every
-between-condition difference. A layer cannot demonstrate value where the signal
+(Table~\ref{tab:ic}), and the spread across seeds is as large as the
+differences between conditions. A layer cannot demonstrate value where the signal
 it would improve on is itself indistinguishable from noise. The locked holdout
 is the partial answer: on a window where the shared signal does pay, the
 ablation is unchanged. It is \num{135} days, which is short by this paper's own
@@ -155,7 +157,7 @@ standards, one was removed by the exchange and one delisted voluntarily. The
 JPX development panel itself has the same character: its \num{2000} securities
 are the competition's primary universe, fixed by the organiser at the end of
 the training period (Section~\ref{sec:data}). All three universes are common
-to every condition and to the published result we re-score, so the bias enters
+to every condition and to the earlier result we re-score, so the bias enters
 no contrast, but absolute performance levels on any of them are not claimed. The US panel also
 required a point-in-time price screen to remove a bankruptcy-reorganisation
 splice (Section~\ref{sec:data-us}); we found it by auditing for impossible

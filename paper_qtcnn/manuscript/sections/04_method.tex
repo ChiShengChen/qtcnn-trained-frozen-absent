@@ -38,9 +38,9 @@ $L=3$) independently of the register width. The layer output is the
 expectation $\langle Z \rangle$ of the single surviving wire.
 
 \paragraph{Second ansatz family.}
-A result on one circuit family is a result on one circuit family. The
-trained-versus-frozen contrast is therefore repeated on a circuit that differs
-from the QCNN in every respect a reviewer could name: the encoder output is
+To test whether the result depends on the circuit family, the
+trained-versus-frozen contrast is repeated on a circuit that differs from the
+QCNN in every structural respect: the encoder output is
 re-uploaded as $R_Y$ rotations before each of $L = 3$ layers; each layer
 applies $R_Y(\theta)\,R_Z(\phi)$ to every wire, with its own parameters, and
 entangles the register with a ring of CNOTs; there is no pooling; and the
@@ -92,7 +92,7 @@ small to amortise its own overhead.
   \end{tabular}
 \end{table}
 
-This is not merely an engineering note. The reference implementation compensated
+The speed-up matters for the evaluation. The reference implementation compensated
 for its cost by subsampling to 9\% of trading days and by capping training at
 \num{10000} sequences, which is what reduced its reported out-of-sample windows
 to 22 and in some runs 2 trading days. The speed-up is what makes the evaluation
@@ -131,9 +131,10 @@ contrast in which the circuit's parameters are the only route from features to
 score, so trained-versus-frozen there cannot be dismissed as structural
 (Section~\ref{sec:results:ablation}).
 
-Parameter counts across the conditions differ by less than 0.4\%
-(\numrange{23817}{23899}), and the purely classical convolutional baseline is
-matched to the \textsc{None} condition exactly.
+Parameter counts across the four hybrid conditions differ by less than
+0.4\% (\numrange{23817}{23899}); the two circuit-only conditions, whose head
+has eight fewer inputs, carry \num{23387} and \num{23369}. The classical
+baselines below are sized as stand-alone models, not matched to these.
 
 \paragraph{Classical baselines.}
 Five models somebody would deploy, trained on the same windows, labels,

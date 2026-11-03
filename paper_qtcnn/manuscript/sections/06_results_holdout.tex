@@ -13,8 +13,8 @@ reproducible run; Appendix~\ref{sec:app:rerun} gives the first.
 \begin{table}[t]
 \centering
 \caption{Locked holdout, 135 trading days. Uncorrected
-bootstrap $p$ against zero; Romano--Wolf $p$ against the no-circuit control
-across the nine candidates run on this window (the two circuit-only
+bootstrap $p$ against zero; Romano--Wolf $p$ across the eight contrasts with
+the no-circuit control on this window (the two circuit-only
 conditions and the second ansatz family were not); DSR deflated by the
 \num{55} configurations (eleven models, five seeds) the study evaluated, using the
 empirical dispersion of their Sharpe ratios on this window (sd \num{0.92},
@@ -44,7 +44,7 @@ circuits differ by \num{0.02}; the no-circuit control is the best of the four
 hybrid conditions and the surrogate is no worse than either circuit; every
 Diebold--Mariano contrast between a hybrid condition and the no-circuit control
 has $p > 0.70$ (the classical baselines are closer, at \num{0.14} for LightGBM
-and \num{0.17} for the MLP; one paired Sharpe-difference test, the MLP's,
+and \num{0.16} for the MLP; one paired Sharpe-difference test, the MLP's,
 reaches $p = 0.046$ uncorrected; none survives correction). Gross Sharpe
 ratios are higher for all nine conditions than on the walk-forward track, which is a property of the
 period, a stretch on which the cross-section rewarded the momentum and
@@ -56,10 +56,11 @@ is stable is the ablation itself (trained beside frozen, the surrogate no
 worse than either, and no contrast significant), which is the quantity the
 design was built to measure.
 
-No condition is distinguishable from zero on this window either. The best,
-the no-circuit control at \num{+1.83}, has a bootstrap $p$ of \num{0.07}
-against a null of zero Sharpe and a Deflated Sharpe Ratio of \num{0.42}
-against the \num{0.95} a claim would require; with nine candidates on
-\num{135} days the expected maximum Sharpe under the null is \num{2.12}, above
+No condition is distinguishable from zero by the test on this window either.
+For the best, the no-circuit control at \num{+1.83}, the percentile interval
+just excludes zero ($[+0.02, +3.94]$) while the null-imposed bootstrap gives
+$p = 0.07$, and its Deflated Sharpe Ratio is \num{0.42} against the
+\num{0.95} a claim would require: deflated by the \num{55} configurations, the
+expected maximum Sharpe under the null on \num{135} days is \num{2.12}, above
 every row of the table. At \SI{5}{bps} one condition remains positive, the
 surrogate at \num{+0.18}; at \SI{10}{bps} none do.

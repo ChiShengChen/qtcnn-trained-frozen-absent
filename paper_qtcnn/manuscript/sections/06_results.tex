@@ -31,7 +31,7 @@ four hybrid conditions differ only in what occupies the quantum position.}
 
 Nor is any condition distinguishable from the \textsc{None} control, the same
 network with the circuit removed. Diebold--Mariano tests on the aligned daily
-return series give $p = 0.53$ for \textsc{Trained}, \num{0.50} for
+return series give $p = 0.53$ for \textsc{Trained}, \num{0.49} for
 \textsc{Frozen}, \num{0.09} for \textsc{Surrogate} and \num{0.80} for the TCN
 baseline; after Romano--Wolf stepdown correction the smallest adjusted $p$ in
 the family of ten is \num{0.38}, for the surrogate.
@@ -50,8 +50,8 @@ features beside it recovers the no-circuit level rather than exceeding it.
 This pair is also the one place in the design where training the circuit
 could show. In the four hybrid conditions the head receives the encoder output
 beside the circuit's, so a frozen circuit that already computes a bounded
-nonlinear function of that output leaves little for its parameters to add; a
-reader could object that trained-equals-frozen there is close to structural.
+nonlinear function of that output leaves little for its parameters to add, and
+trained-equals-frozen there may be close to structural.
 With the encoder withheld from the head, the circuit's parameters are the only
 route from features to score. Holding them at their initialisation gives a
 pooled Sharpe ratio of \num{-0.183} (95\% CI $[-1.42, +0.91]$, $p = 0.74$)
@@ -78,10 +78,9 @@ of the eleven conditions; early stopping keeps \num{14} trees on average. It sit
 $p = 0.44$). Whatever signal these features carry, the model family that wins
 this competition on them extracts no more of it than the networks do.
 
-The sharpest result is Figure~\ref{fig:trained-frozen}, and it is the one
-contrast this design can resolve. A non-significant difference is not evidence
-of no difference, so we state it as an equivalence rather than as a failure to
-reject. On the pooled track the trained circuit and the same circuit frozen at
+Figure~\ref{fig:trained-frozen} shows the one contrast this design resolves
+finely. Because a non-significant difference is not evidence of no difference,
+it is tested as an equivalence rather than as a failure to reject. On the pooled track the trained circuit and the same circuit frozen at
 its initialisation differ by \num{0.008} in annualised Sharpe ratio, with a
 paired stationary-bootstrap standard error of \num{0.0075}. Two one-sided
 tests against a margin of \num{0.03} Sharpe give $p = \num{0.0055}$: the
@@ -99,39 +98,43 @@ hypothesis about means, and by a paired bootstrap on the difference of Sharpe
 ratios, which is the hypothesis the table is ordered on. The two agree here,
 with no contrast significant under either; the closest is the surrogate, \num{0.22}
 Sharpe below the control ($p = 0.06$ paired bootstrap, \num{0.09}
-Diebold--Mariano). The trained circuit beats that control by \num{-0.082} Sharpe with a
+Diebold--Mariano), whose paired interval, $[-0.47, -0.0003]$, ends just short of
+zero. The circuit and the surrogate are not distinguishable from each other
+either: the frozen circuit is \num{0.13} Sharpe above the surrogate on this
+track ($p = 0.17$), \num{0.03} above it on the US panel ($p = 0.86$) and
+\num{0.06} below it on the holdout ($p = 0.89$), and they are equivalent inside
+\num{0.50} on both walk-forward panels. The trained circuit beats that control by \num{-0.082} Sharpe with a
 standard error of \num{0.120}; equivalence holds at a margin of \num{0.50}
 ($p < \num{0.001}$) but not at \num{0.25} ($p = \num{0.07}$), and the minimum
-detectable effect at \SI{80}{\percent} power is \num{0.34}. The honest
-statement is therefore that the circuit contributes less than half a Sharpe
-unit, not that it contributes nothing. What is established is the narrower and
-more diagnostic claim: optimising the circuit's eighteen parameters changes
+detectable effect at \SI{80}{\percent} power is \num{0.34}. The design
+therefore shows that the circuit contributes less than half a Sharpe unit, not
+that it contributes nothing. The narrower claim it does establish is that
+optimising the circuit's eighteen parameters changes
 nothing that freezing them does not change identically, so on this task the
 quantum layer acts as a fixed random feature.
 
-This is not simply a failure to train. The circuit does move. Instrumenting the optimiser over a fold, the eighteen
-parameters travel an $L_2$ distance of \num{0.044} and \num{0.073} from
-initialisations of norm \num{0.416} and \num{0.622}, that is by \SI{11}{\percent}
-of their own magnitude; across the twenty walk-forward cells the restored
-weights sit \SI{18}{\percent} of the initial norm from where they started
-(range \numrange{3}{54}\,\si{\percent}). They move, and nothing downstream registers it: the
+The equivalence is not a failure to train: the circuit's parameters move.
+Across the twenty walk-forward cells the restored weights sit
+\SI{18}{\percent} of the initial norm from where they started (range
+\numrange{3}{54}\,\si{\percent}), and \SI{67}{\percent} under the full
+training budget below. They move, and nothing downstream registers it: the
 validation AUC of the trained and frozen conditions differ by at most
 $2.0\times10^{-4}$. Whatever the circuit learns, the encoder and head absorb. This is
 the behaviour \citet{bermejo2024quantum} predict for a randomly initialised
 quantum convolutional network, which they show acts only on low-bodyness
 information about its input and is reproduced by a classical surrogate built
 from Pauli propagation. Their demonstration is on physics benchmarks; ours is
-the same prediction measured on a financial ranking task, and it is
-corroborated here by a surrogate that is not merely competitive with the
-circuit but statistically equivalent to the network that has no circuit at
-all.
+the same prediction measured on a financial ranking task. Here it is
+corroborated by the controls: neither the circuit nor a parameter-matched
+classical surrogate improves on the network with no circuit, and the circuit
+and the surrogate are indistinguishable from each other.
 
 Nor is it an artefact of the training budget. Early stopping halts the
 circuit conditions after \num{9.1} epochs on average and restores the
-best-validation epoch, so a sceptic could hold that the circuit was never given
-time to matter. Re-running both circuit conditions for the full \num{30} epochs
+best-validation epoch, so the circuit might never have been given time to
+matter. Re-running both circuit conditions for the full \num{30} epochs
 and scoring the last epoch's weights moves the eighteen parameters much
-further, by \SI{68}{\percent} of their initial norm on average over the twenty
+further, by \SI{67}{\percent} of their initial norm on average over the twenty
 cells (range \numrange{25}{140}\,\si{\percent}), and changes almost nothing
 downstream: information coefficients differ by at most $3.8\times10^{-4}$ in a
 cell, per-cell Sharpe ratios correlate at \num{0.987}, and the pooled
@@ -155,7 +158,7 @@ per-cell Sharpe ratios correlate at \num{0.998}, and training moves the
 \num{48} parameters by \SI{21}{\percent} of their initial norm. Two things
 differ from the QCNN. The two conditions are no longer bit-for-bit alike:
 information coefficients differ by up to \num{0.011} in a cell, where the QCNN
-pair differed by $5.5\times10^{-5}$, so the all-wire observable does let the
+pair differed by at most $7.7\times10^{-5}$, so the all-wire observable does let the
 parameters reach the score. And the paired standard error of the pooled
 Sharpe difference is \num{0.091}, twelve times the QCNN's, so two one-sided
 tests certify equivalence only inside a margin of \num{0.25} ($p = 0.005$;
@@ -235,23 +238,23 @@ report the ranking statistics directly (Table~\ref{tab:ic}).
   \end{tabular}
 \end{table}
 
-Three readings, and the first is the one that matters for the ablation. The
+Three observations follow, and the first bears on the ablation. The
 trained and frozen circuits agree on the ranking statistics: identical
 information coefficients to four decimal places and $t$-statistics to two;
 decile monotonicity, which rests on ten portfolio means per cell, differs by
-\num{0.006} on JPX and \num{0.003} on the US panel. The equivalence of
+\num{0.005} on JPX and \num{0.003} on the US panel. The equivalence of
 Section~\ref{sec:results:ablation} is therefore not an artefact of the
 portfolio rule washing out a difference in the scores; the scores themselves
 are the same.
 
 Second, the effect sizes place this study where it belongs in the literature.
 The largest difference in information coefficient between a condition with a
-circuit or surrogate beside the encoder and the no-circuit control is
-\num{0.0010} on either panel, against the
+circuit or surrogate beside the encoder and the no-circuit control is at most
+\num{0.001} on either panel, against the
 \num{0.005} that \citet{shen2026quantum} report as an indistinguishable
 kernel-swap contrast on Chinese A-shares, and no $t$-statistic on either panel
-exceeds \num{1.1}. Nothing here is a large effect measured imprecisely; the
-effects are small.
+exceeds \num{1.1}. The effects are small, not large and imprecisely
+measured.
 
 Third, ranking skill does not translate into realised Sharpe, and on the US
 panel it is actively misleading. Every condition has a positive mean
@@ -270,9 +273,10 @@ conclusion it prefers.
 Figure~\ref{fig:seeds} shows why single-seed comparisons of these models cannot
 be trusted. The seed controls only which \num{60000} of roughly \num{190000}
 labelled training sequences a fold draws, yet within a fold the spread across
-seeds (standard deviation \numrange{0.12}{1.70} in Sharpe units, and up to
-\num{4.39} between the best and worst seed of one condition) exceeds every
-between-condition difference in Table~\ref{tab:headline}. Fold 2, which covers
+seeds (standard deviation \numrange{0.15}{1.70} in Sharpe units, and up to
+\num{4.39} between the best and worst seed of one condition) is as large as or
+larger than the differences between conditions in Table~\ref{tab:headline},
+which reach \num{0.60}. Fold 2, which covers
 the 2020 recovery, is negative in \num{51} of its \num{55} cells; fold 3 is
 positive in \num{52} of its \num{55}. On this task the training draw and the test regime
 matter, and the architecture does not.
@@ -294,8 +298,9 @@ not, worse than choosing at random.
 \label{sec:results:costs}
 
 Turnover runs from \SI{34}{\percent} (LSTM) to \SI{72}{\percent} (LightGBM) of
-each leg per day, and from \SI{44}{\percent} to \SI{48}{\percent} across the
-six hybrid conditions. Figure~\ref{fig:cost} charges a round-trip cost on the
+each leg per day, from \SI{44}{\percent} to \SI{47}{\percent} across the
+four hybrid conditions, and \SI{48}{\percent} for the two circuit-only
+conditions. Figure~\ref{fig:cost} charges a round-trip cost on the
 traded fraction of both legs. On the pooled track, break-even exists for
 exactly one of the eleven conditions, the transformer baseline at
 \SI{0.49}{bps}, because the other ten have a negative gross mean return
@@ -359,7 +364,9 @@ What changes is the sign and, unlike the walk-forward on Tokyo data, the level.
 Every condition loses money over this window, which runs from March 2019 to
 September 2021 and contains both the COVID crash and the 2021 reversal, and for
 five of them (both circuit conditions, the surrogate, the TCN and the MLP)
-the loss is itself significant at the \SI{5}{\percent} level. The gross mean
+the loss is itself significant at the \SI{5}{\percent} level ($p$ from \num{0.009} to
+\num{0.046}); the no-circuit control's interval also excludes zero, at
+$p = 0.052$. The gross mean
 return is negative for all nine, so no condition has a break-even transaction
 cost at all. The four hybrid conditions cluster between \num{-1.44} and
 \num{-1.49}, while the classical baselines spread from \num{-0.66} (LSTM) to
@@ -368,9 +375,9 @@ Diebold--Mariano contrast reaches $p = 0.03$ uncorrected and \num{0.22} after
 Romano--Wolf adjustment; no other contrast is significant under any test we
 apply. The backtest-overfitting probability is \num{0.15}.
 
-We draw one negative lesson from this panel about our own first attempt at it.
+Our first run on this panel was wrong in one respect.
 The pairwise return correlations across the eight network conditions run from
-\num{0.57} to \num{1.000}, not the near-unity we initially measured: that
+\num{0.62} to \num{1.000}, not the near-unity we initially measured: that
 figure came from a single contaminated security-day, described in
 Section~\ref{sec:data-us}, and the inference we had drawn from it, that the
 conditions move as one because they track a single signal, was an artefact
@@ -435,8 +442,9 @@ Second, and more diagnostically, the ranking by Sharpe ratio and the ranking by
 information coefficient are close to opposed. The quantum model has the
 \emph{lowest} information coefficient of the nine (\num{0.0016},
 $t = \num{0.42}$), while the three models whose information coefficients are
-individually significant (MLP at $t = \num{2.57}$, PQC\,+\,LightGBM at
-\num{2.21}, QNN at \num{2.10}) all have negative Sharpe ratios. A model that
+individually significant (MLP at $t = \num{2.57}$, QLSTM at \num{2.37},
+PQC\,+\,LightGBM at \num{2.21}, QNN at \num{2.10}) earn little or nothing:
+three have negative Sharpe ratios and QLSTM \num{+0.13} ($p = 0.85$). A model that
 ranks the cross-section better than its rivals and earns less from it is not
 being rewarded for its ranking. On a \num{22}-day window that pattern is
 invisible; over \num{241} days it is the most informative thing in the table.
@@ -460,7 +468,7 @@ of width, and the measured observable is local, which are the conditions under
 which barren plateaus are avoided. Expressibility, measured as KL divergence
 from the Haar fidelity distribution, falls from \num{0.188} to \num{0.078}
 between one and three layers at eight qubits, so the circuit is neither
-degenerate nor flat. It is trainable; training it simply does not help.
+degenerate nor flat. It is trainable; training it does not help.
 
 \begin{figure}[t]
 \centering
@@ -496,16 +504,17 @@ trained, which it was not. Repeating the measurement on the twenty trained
 cells, each on three dates drawn from its own test window with \num{300}
 securities per date, gives a less tidy picture (Table~\ref{tab:shots}).
 Training widens the band: the median cell has a within-date standard
-deviation of \num{0.10}, and the range across cells runs from \num{0.006} to
-\num{0.49}, so the shot budget is a property of the trained cell rather than
-of the circuit. At the median cell \num{1024} shots reach a rank correlation
-of \num{0.96} and \num{8192} reach \num{0.99}; the three narrowest cells, all
-from one seed, do not reach \num{0.99} at \num{131072} shots; the widest
-reach it at \num{256}. Averaged over cells the figure is \num{0.99} at about
+deviation of \num{0.10}, and the range across cells runs from \num{0.007} to
+\num{0.51}, so the shot budget is a property of the trained cell rather than
+of the circuit. Eight of the twenty cells reach a rank correlation of
+\num{0.99} at \num{1024} shots, three at \num{8192}, five at \num{32768} and
+one at \num{131072}; the three narrowest, all from one seed, do not reach it at
+\num{131072}, and no cell reaches it at \num{256}. The median cell therefore
+needs \num{8192} shots. Averaged over cells the figure is \num{0.99} at about
 \num{32768} shots, which coincides with the initialised-encoder number by
-accident, as the mean of cells that need \num{256} and cells that need more
+accident, as the mean of cells that need \num{1024} and cells that need more
 than \num{131072}. Scoring \num{2000} securities for one trading day
-therefore costs about $2\times10^{6}$ circuit executions at the median cell
+therefore costs about $1.6\times10^{7}$ circuit executions at the median cell
 and $7\times10^{7}$ at the mean, against the $5\times10^{5}$ a random-angle
 scan implies.
 
@@ -513,7 +522,8 @@ scan implies.
   \centering
   \caption{Rank preservation against shot budget at three input
   distributions: uniform random angles; real feature windows through an
-  initialised encoder (12 dates, 300 securities each); and real windows
+  initialised encoder (12 dates up to \num{8192} shots and 6 further dates
+  above, 300 securities each); and real windows
   through each of the twenty trained cells on dates from its own test window
   (3 dates per cell, 300 securities each). Entries are within-date Spearman
   correlations between finite-shot and analytic scores; for the trained
@@ -526,11 +536,11 @@ scan implies.
     \cmidrule(lr){4-5}
     Shots per security & (sd \num{0.443}) & (sd \num{0.018}) & median (sd \num{0.10}) & range \\
     \midrule
-    256     & 0.991  & 0.56  & 0.905 & 0.32--0.99 \\
-    1\,024  & 0.997  & 0.79  & 0.964 & 0.51--0.997 \\
-    8\,192  & 0.9996 & 0.96  & 0.993 & 0.82--0.9996 \\
+    256     & 0.991  & 0.56  & 0.921 & 0.33--0.990 \\
+    1\,024  & 0.997  & 0.79  & 0.972 & 0.53--0.997 \\
+    8\,192  & 0.9996 & 0.96  & 0.995 & 0.83--0.9995 \\
     32\,768 & --     & 0.989 & 0.998 & 0.94--0.9998 \\
-    131\,072& --     & 0.997 & 0.999 & 0.98--0.9999 \\
+    131\,072& --     & 0.997 & 0.9995 & 0.98--0.9999 \\
     \bottomrule
   \end{tabular}
 \end{table}

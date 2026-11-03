@@ -55,7 +55,11 @@ ratio come from a stationary bootstrap with mean block length
 of \citet{politis2004automatic} on these series; the null is imposed on the
 return series by demeaning it before resampling, rather than by re-centring the
 bootstrap draws of the statistic, because the latter assumes a symmetric
-sampling distribution that a skewed return series does not have.
+sampling distribution that a skewed return series does not have. Intervals
+are percentiles of the ordinary bootstrap distribution and $p$-values come from
+the null-imposed one, so near the boundary the two can disagree: an interval
+can just exclude zero while $p$ stays above \num{0.05}. The $p$-value is the
+test, and each such case is pointed out where it occurs.
 
 A non-significant difference is not evidence of no difference, so every null
 claim below is accompanied by the two statistics that make it interpretable.
@@ -99,9 +103,10 @@ bootstrap that resamples both tracks on the same days.
 Family-wise error is controlled by the Romano--Wolf stepdown
 procedure~\citep{romano2005stepwise}, which is far less conservative than
 Bonferroni at this number of comparisons. We state the family explicitly: it is
-the set of contrasts against the no-circuit control on one panel, seven
-hypotheses. It does not cover the eight tests of each condition against zero,
-and it is not pooled across the two markets or the holdout; those are reported
+the set of contrasts against the no-circuit control on one panel: ten
+hypotheses on the Tokyo walk-forward, eight on the US panel and eight on the
+holdout. It does not cover the tests of each condition against zero, and it is
+not pooled across the two markets or the holdout; those are reported
 uncorrected and should be read as such.
 
 \subsection{Quantile portfolios}
@@ -173,8 +178,12 @@ replaced.
     initialised one (Section~\ref{sec:results:diagnostics}).
   \item Conditions were added after the first results: the circuit-only pair,
     the no-early-stopping control, the second ansatz family and the LightGBM
-    baseline. All are reported; none was removed. The multiplicity corrections
-    count every configuration run.
+    baseline. All are reported; none was removed. The Deflated Sharpe Ratio
+    counts the \num{55} configurations of the main comparison (eleven
+    conditions, five seeds). The second-ansatz and full-budget controls add
+    \num{20} further configurations on the same track, each testing a single
+    contrast; they are not counted, and counting them would lower every
+    Deflated Sharpe Ratio further.
   \item Every network result in the paper was regenerated in November 2026
     with the released code: both walk-forward panels, the circuit-only
     condition, the full-budget control and the holdout. The September runs had

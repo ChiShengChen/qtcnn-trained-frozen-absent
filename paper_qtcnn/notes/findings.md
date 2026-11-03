@@ -967,8 +967,50 @@ September cell's 0.611 / 0.0084 / 8 epochs.
   it reproduces the September figures exactly on the archived returns). New: R^2 0.910 on
   the four neural baselines, alpha t -0.04; twin R^2 0.975, t -0.73.
 - **Full-budget control, corrected** (`--patience 30 --final-weights`, #5634-5638): circuit
-  moves 68% of its initial norm (25-140%) instead of 18%; trained -0.108, frozen -0.108;
+  moves 67% of its initial norm (25-140%) instead of 18%; trained -0.108, frozen -0.108;
   difference +0.000, se 0.043 (six times the early-stopped se), TOST equivalent at 0.10
   (p 0.02), not at 0.03 (p 0.24), MDE 0.12; per-cell corr 0.987; IC halves (0.0083 ->
   0.0038) for both. Manuscript: the 0.03 certificate is now stated for the early-stopped
   runs; the full-budget certificate is 0.10. The September full-budget run had claimed 0.03.
+
+## F42. Independent numeric audit (2026-11-03) and what it changed
+A fresh agent, given only the CSVs and the manuscript, checked every number. Confirmed and fixed:
+- Shot cost at the median cell: 8192 x 2000 = 1.6e7 executions, not 2e6 (leftover from 1024).
+- **Shot-budget test windows were shifted a month.** `shot_budget_real_scores.py --states` built
+  folds from the sequence-cache calendar, which starts 19 trading days after the feature cache
+  that training uses, so every "own test window" was 2019-07-16.. instead of 2019-06-18..
+  (all dates after training; no leakage). Fixed to use the feature calendar; re-run as gq
+  #5810. Old file kept as `results/diagnostics/shot_budget_trained_shiftedwindows.csv`.
+  Also: no cell reaches 0.99 at 256 shots (best 0.9899); the median column must be the median
+  over cells, not over cell-dates.
+- Romano-Wolf family: ten hypotheses JPX, eight US, eight holdout (text said seven).
+- Percentile interval vs null-imposed p disagree near the boundary (holdout no-circuit CI
+  [+0.02, +3.94] with p 0.07; surrogate-vs-control CI ends at -0.0003 with p 0.056; US
+  no-circuit p 0.052 with CI excluding zero). Protocol now says the p-value is the test and each
+  case is pointed out. Headline tables print p with three decimals below 0.1 (`_fmt_p`).
+- The surrogate was claimed to "match the circuit" without a test. New
+  `scripts_data/surrogate_contrasts.py`: frozen minus surrogate +0.13 JPX (p 0.17), +0.03 US
+  (p 0.86), -0.06 holdout (p 0.89); equivalent at 0.50 on both walk-forward panels.
+- Holdout expected maximum 2.12 is for 55 configurations, not nine candidates.
+- DSR counts 55; the 20 second-ansatz and full-budget configurations are not counted (stated).
+- Stale September values: 5.5e-5 (now 7.7e-5), seed sd 0.12 (now 0.15), the 15 Sep optimiser
+  probe (0.044/0.073, 11%; removed, November cells used instead).
+- Overclaims: seed spread "exceeds every between-condition difference" (headline differences
+  reach 0.60); "between-seed variance of any model exceeds between-model variance" (seed sd
+  0.13-0.61 vs 0.17); Figure seeds "more than three units" (max 2.2 for the plotted pair).
+- TCN baseline is not parameter-matched to None (129,633 vs 23,817); circuit-only conditions
+  carry 23,387 / 23,369.
+- US correlation range across the eight networks starts at 0.62 (0.57 included LightGBM).
+- US panel size: the cache holds 2,792,249 security-days after the $1 price floor (text said
+  2,796,919, the pre-floor count); the floor and the CHRD splice are now described in the data
+  section, which two other sections already cited for it.
+- Legacy re-evaluation: four models have individually significant IC, including QLSTM (+0.13).
+- Rounding: DM frozen 0.49, holdout MLP DM 0.16, full-budget shift 67%, monotonicity 0.005,
+  IC difference at most 0.001.
+- **Corrected shot budget (gq #5810, all 60 cell-dates inside the cell's own test window).**
+  Supersedes the F40.1 figures. Score sd per cell 0.007-0.51 (median 0.10). Median over cells
+  of the rank correlation at 256/1024/8192/32768/131072 shots: 0.921/0.972/0.995/0.998/0.9995;
+  ranges 0.33-0.990 / 0.53-0.997 / 0.83-0.9995 / 0.94-0.9998 / 0.98-0.9999. Shots needed for
+  0.99: 1024 for 8 cells, 8192 for 3, 32768 for 5, 131072 for 1 (f2_s2), never for 3 (f0_s4,
+  f2_s4, f3_s4). Median cell 8192 (unchanged); mean over cells 0.990 at 32768. Daily cost at
+  the median cell 1.6e7 executions.

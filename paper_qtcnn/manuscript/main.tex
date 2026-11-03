@@ -11,8 +11,9 @@
 \usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
 \usepackage[margin=2.5cm]{geometry}
-\usepackage{natbib}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage{subcaption}
+\usepackage{enumitem}
 \providecommand{\ket}[1]{\left|#1\right\rangle}
 \providecommand{\bra}[1]{\left\langle#1\right|}
 
@@ -52,7 +53,40 @@ testing, backtest overfitting, deflated Sharpe ratio, reproducibility
 \appendix
 \input{sections/A_reproducibility}
 
+\section*{Abbreviations}
+\begin{description}[noitemsep,leftmargin=5.5em,labelwidth=5em,font=\normalfont]
+  \item[AUC] area under the receiver operating characteristic curve
+  \item[B/E] break-even transaction cost
+  \item[bps] basis points
+  \item[CI] confidence interval
+  \item[CNOT] controlled-NOT gate
+  \item[DSR] Deflated Sharpe Ratio
+  \item[IC] information coefficient
+  \item[JPX] Japan Exchange Group
+  \item[LSTM] long short-term memory network
+  \item[Max DD] maximum drawdown
+  \item[MLP] multilayer perceptron
+  \item[NYSE] New York Stock Exchange
+  \item[OHLCV] open, high, low, close and volume
+  \item[PQC] parameterised quantum circuit
+  \item[QCNN] quantum convolutional neural network
+  \item[QLSTM] quantum long short-term memory network
+  \item[QNN] quantum neural network
+  \item[QTCNN] quantum temporal convolutional network
+  \item[RSI] relative strength index
+  \item[RW] Romano--Wolf (stepdown multiple-testing correction)
+  \item[SPA] superior predictive ability (test)
+  \item[TCN] temporal convolutional network
+  \item[TOST] two one-sided tests (of equivalence)
+\end{description}
+
 \section*{Declarations}
+
+\subsection*{Ethics approval and consent to participate}
+Not applicable.
+
+\subsection*{Consent for publication}
+Not applicable.
 
 \subsection*{Availability of data and materials}
 The JPX panel is the public competition dataset \citep{jpx2022competition} and
@@ -65,7 +99,7 @@ trained weights of the cells used for the shot-budget measurement, and the
 legacy pipelines re-evaluated in Section~\ref{sec:results:reeval}.
 
 \subsection*{Competing interests}
-The reference implementation and published result re-examined in this paper are
+The reference implementation and preprint re-examined in this paper are
 the authors' own \citep{chen2025quantumb}. The authors declare that they have no
 competing interests.
 
@@ -82,7 +116,7 @@ final manuscript.
 \subsection*{Acknowledgements}
 Not applicable.
 
-\bibliographystyle{plainnat}
+\bibliographystyle{unsrtnat}
 \bibliography{refs,refs_generated}
 
 \end{document}

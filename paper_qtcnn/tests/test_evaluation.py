@@ -101,6 +101,27 @@ def test_dsr_falls_as_the_number_of_trials_grows():
     assert single > many
 
 
+def test_dsr_expected_maximum_scales_with_the_trial_dispersion():
+    # Bailey and Lopez de Prado's expected maximum is linear in the standard
+    # deviation of the trial Sharpe ratios: doubling the dispersion doubles the
+    # Sharpe a strategy must beat, and lowers its DSR.
+    rng = np.random.default_rng(1)
+    r = rng.normal(1e-3, 1e-2, 500)
+    narrow = ev.deflated_sharpe_ratio(r, n_trials=55, trial_sharpe_std=0.02)
+    wide = ev.deflated_sharpe_ratio(r, n_trials=55, trial_sharpe_std=0.04)
+    assert wide["sr_zero_ann"] == pytest.approx(2 * narrow["sr_zero_ann"])
+    assert wide["dsr"] < narrow["dsr"]
+    assert narrow["trial_sd_ann"] == pytest.approx(0.02 * np.sqrt(252))
+
+
+def test_dsr_defaults_to_the_sampling_error_when_no_dispersion_is_given():
+    rng = np.random.default_rng(2)
+    r = rng.normal(5e-4, 1e-2, 400)
+    default = ev.deflated_sharpe_ratio(r, n_trials=20)
+    explicit = ev.deflated_sharpe_ratio(r, n_trials=20, trial_sharpe_std=1 / np.sqrt(400))
+    assert default["dsr"] == pytest.approx(explicit["dsr"])
+
+
 def test_dsr_is_defined_for_a_single_trial():
     # norm.ppf(1 - 1/n) is -inf at n=1; a single trial has no selection bias.
     rng = np.random.default_rng(7)

@@ -1,8 +1,9 @@
 \section{Data}
 \label{sec:data}
 
-We use the JPX Tokyo Stock Exchange daily price panel, covering
-\num{2000} securities. The training file spans 2017-01-04 to 2021-12-03 and the
+We use the daily price panel of the JPX Tokyo Stock Exchange Prediction
+competition~\citep{jpx2022competition}, published by the Japan Exchange Group
+(JPX), covering \num{2000} securities. The training file spans 2017-01-04 to 2021-12-03 and the
 supplemental file continues to 2022-06-24; after feature construction the
 usable panel holds \num{2483470} security-days over \num{1296} trading dates
 from 2017-02-02. The \num{2000} securities are the competition's primary
@@ -10,7 +11,7 @@ universe, a membership list fixed by the organiser when the data were released
 at the end of the training period and applied to the whole window. It therefore
 carries the hindsight that Section~\ref{sec:intro} criticises: a name is in the
 panel for 2017 because it was listed and liquid in late 2021. The bias is common
-to every condition and to the published result we re-score, so it enters no
+to every condition and to the earlier result we re-score, so it enters no
 contrast between them, and no absolute level of performance on this panel is
 claimed.
 
@@ -93,8 +94,14 @@ among those with at least \num{200} trading days and a median close of at least
 window. Split-adjusted closes and volumes come from a public daily-price source and
 are adjusted by the convention of Section~\ref{sec:data:adjustment}; the
 target, the 21 features and the
-cross-sectional normalisation are computed by the same functions. The panel
-holds \num{2796919} security-days over \num{1399} trading dates from
+cross-sectional normalisation are computed by the same functions. A
+point-in-time price floor drops security-days whose close is below \$1, the
+standard penny-stock screen. It removes \num{4670} security-days (\SI{0.17}{\percent})
+across 49 symbols, among them a bankruptcy-reorganisation splice in which the
+price source joined the post-emergence entity to the pre-emergence ticker and
+produced a single forward return of \SI{25733}{\percent}; that one
+security-day contaminated our first run on this panel
+(Section~\ref{sec:results:us}). The panel then holds \num{2792249} security-days over \num{1399} trading dates from
 2016-11-30 to 2022-06-22. Because the US calendar has more trading days, the
 development period yields five walk-forward folds (\num{625} out-of-sample
 days) rather than four; the holdout window is the same. The symbol directory

@@ -174,8 +174,10 @@ def fig_shots(shots: pd.DataFrame, out: Path, real: Optional[pd.DataFrame] = Non
             c = cell.groupby("shots")["rank_corr"].mean().sort_index()
             ax.plot(c.index, c.values, color=S3, lw=0.7, alpha=0.35)
         med = trained.groupby(["cell", "shots"])["rank_corr"].mean().groupby("shots").median().sort_index()
+        csd = trained.groupby("cell")["score_std"].mean()
         ax.plot(med.index, med.values, color=S3, lw=2, marker="^", ms=6, mec=SURFACE, mew=1.2,
-                label="trained cells, median (20 cells, sd 0.006-0.49)")
+                label=f"trained cells, median ({trained['cell'].nunique()} cells, sd "
+                      f"{csd.min():.3f}-{csd.max():.2f})")
         xmax = max(xmax, int(med.index.max()))
     ax.plot(df["shots"], df["rank_corr_vs_analytic"], color=S1, lw=2, marker="o", ms=6,
             mec=SURFACE, mew=1.2, label="random angles (sd 0.44)")

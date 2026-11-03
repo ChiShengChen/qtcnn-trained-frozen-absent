@@ -64,7 +64,11 @@ def main() -> None:
     if a.states:
         import re
         from qtcnn_research.walkforward import make_walk_forward_folds
-        dev = all_dates[all_dates < D.HOLDOUT_START]
+        # Fold boundaries must come from the feature-cache calendar, exactly as
+        # run_experiment builds them; the sequence cache starts 19 days later and
+        # would shift every test window by about a month.
+        feat_dates = np.sort(pd.read_parquet(a.cache, columns=["Date"])["Date"].unique())
+        dev = feat_dates[feat_dates < D.HOLDOUT_START]
         folds = {f.fold: f for f in make_walk_forward_folds(
             dev, train_days=a.train_days, test_days=a.test_days,
             valid_days=a.valid_days, embargo_days=a.embargo_days)}
