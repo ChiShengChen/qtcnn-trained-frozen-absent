@@ -459,7 +459,7 @@ statement about the task and not about any of the architectures in it.
 \label{sec:results:diagnostics}
 
 The negative result above is not explained by the circuit being untrainable.
-Figure~\ref{fig:barren} plots the variance of a circuit parameter's gradient at
+Figure~\ref{fig:diagnostics}a plots the variance of a circuit parameter's gradient at
 random initialisation from two to twelve qubits: it moves from
 $3.1\times10^{-3}$ to $2.0\times10^{-3}$, a fitted log-variance slope of \num{-0.036}
 per qubit against the \num{-0.69} an exponential $2^{-n}$ decay would give.
@@ -472,21 +472,15 @@ degenerate nor flat. It is trainable; training it does not help.
 
 \begin{figure}[t]
 \centering
-\begin{subfigure}[t]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{fig_barren}
-  \caption{Gradient variance against register width.}
-  \label{fig:barren}
-\end{subfigure}\hfill
-\begin{subfigure}[t]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{fig_shots}
-  \caption{Rank preservation against shot budget at three input
-  distributions; faint lines are the twenty trained cells.}
-  \label{fig:shots}
-\end{subfigure}
-\caption{Circuit-level diagnostics at eight qubits and three layers.}
+\includegraphics[width=\linewidth]{fig_diagnostics}
+\caption{Circuit-level diagnostics at eight qubits and three layers.
+(a) Gradient variance against register width. (b) Rank preservation against
+shot budget at three input distributions; faint lines are the twenty trained
+cells.}
+\label{fig:diagnostics}
 \end{figure}
 
-Figure~\ref{fig:shots} addresses deployment, and it is the one diagnostic in
+Figure~\ref{fig:diagnostics}b addresses deployment, and it is the one diagnostic in
 this section whose answer depends on where the circuit's inputs come from. The
 strategy consumes a ranking, so the relevant quantity is the Spearman
 correlation between finite-shot and analytic scores within a trading date. On

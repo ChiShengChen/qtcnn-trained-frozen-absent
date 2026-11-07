@@ -156,7 +156,7 @@ def fig_cost(costs: pd.DataFrame, out: Path):
 
 
 def fig_shots(shots: pd.DataFrame, out: Path, real: Optional[pd.DataFrame] = None,
-              trained: Optional[pd.DataFrame] = None):
+              trained: Optional[pd.DataFrame] = None, ax=None):
     """Rank preservation against shot budget, at three input distributions.
 
     The random-angle curve is what a circuit-level scan measures; the
@@ -167,7 +167,9 @@ def fig_shots(shots: pd.DataFrame, out: Path, real: Optional[pd.DataFrame] = Non
     df = shots[shots["shots"] != "analytic"].copy()
     df["shots"] = df["shots"].astype(int)
     df = df.sort_values("shots")
-    fig, ax = plt.subplots(figsize=(4.8, 3.2))
+    own = ax is None
+    if own:
+        fig, ax = plt.subplots(figsize=(4.8, 3.2))
     xmax = df["shots"].max()
     if trained is not None and not trained.empty:
         for _, cell in trained.groupby("cell"):
@@ -193,12 +195,15 @@ def fig_shots(shots: pd.DataFrame, out: Path, real: Optional[pd.DataFrame] = Non
     ax.set_ylim(0.2, 1.03)
     ax.legend(frameon=False, fontsize=7, loc="lower right")
     _style(ax, ylabel="Spearman rank corr. vs analytic", xlabel="Shots per circuit evaluation")
-    _save(fig, out, "fig_shots")
+    if own:
+        _save(fig, out, "fig_shots")
 
 
-def fig_barren(bp: pd.DataFrame, out: Path):
+def fig_barren(bp: pd.DataFrame, out: Path, ax=None):
     df = bp.sort_values("n_qubits")
-    fig, ax = plt.subplots(figsize=(4.4, 3.0))
+    own = ax is None
+    if own:
+        fig, ax = plt.subplots(figsize=(4.4, 3.0))
     ax.plot(df["n_qubits"], df["grad_var"], color=S1, lw=2, marker="o", ms=6, mec=SURFACE, mew=1.2)
     ax.set_yscale("log")
     ax.set_xticks(df["n_qubits"])
@@ -207,7 +212,21 @@ def fig_barren(bp: pd.DataFrame, out: Path):
         ax.text(0.97, 0.95, f"fitted log-var slope = {b:+.3f} per qubit\n(exponential decay would be ≈ −0.69)",
                 transform=ax.transAxes, fontsize=8, color=INK2, ha="right", va="top")
     _style(ax, ylabel="Var[∂⟨Z⟩/∂θ] at random init (log)", xlabel="Qubits (3 conv layers, 6 shared params each)")
-    _save(fig, out, "fig_barren")
+    if own:
+        _save(fig, out, "fig_barren")
+
+
+def fig_diagnostics(bp: pd.DataFrame, shots: pd.DataFrame, out: Path,
+                    real: Optional[pd.DataFrame] = None, trained: Optional[pd.DataFrame] = None):
+    """Both circuit diagnostics in one composite file, as the journal asks for
+    multi-panel figures: (a) gradient variance, (b) shot budget."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 3.3))
+    fig_barren(bp, out, ax=ax1)
+    fig_shots(shots, out, real=real, trained=trained, ax=ax2)
+    for ax, lab in ((ax1, "a"), (ax2, "b")):
+        ax.text(-0.14, 1.04, lab, transform=ax.transAxes, fontsize=12, fontweight="bold", va="bottom")
+    fig.tight_layout(w_pad=2.0)
+    _save(fig, out, "fig_diagnostics")
 
 
 def main():
@@ -231,6 +250,8 @@ def main():
     trained = pd.read_csv(trained_f) if trained_f.exists() else None
     fig_shots(pd.read_csv(diag / "shot_noise.csv"), out, real=real, trained=trained)
     fig_barren(pd.read_csv(diag / "barren_plateau.csv"), out)
+    fig_diagnostics(pd.read_csv(diag / "barren_plateau.csv"), pd.read_csv(diag / "shot_noise.csv"), out,
+                    real=real, trained=trained)
 
 
 if __name__ == "__main__":

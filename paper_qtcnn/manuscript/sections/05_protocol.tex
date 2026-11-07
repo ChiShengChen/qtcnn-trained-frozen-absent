@@ -26,8 +26,8 @@ a cleaner decision boundary than regression on all names.
 
 \subsection{Training}
 \label{sec:protocol:training}
-Every condition is trained by the same loop: AdamW (learning rate \num{e-3},
-weight decay \num{e-4}) under a cosine schedule over a budget of \num{30}
+Every condition is trained by the same loop: AdamW (learning rate $10^{-3}$,
+weight decay $10^{-4}$) under a cosine schedule over a budget of \num{30}
 epochs, batches of \num{512}, gradient norm clipped at \num{1}, binary
 cross-entropy on the extreme labels, and a random subsample of \num{60000}
 labelled sequences per fold drawn by the seed. Early stopping monitors the

@@ -14,6 +14,11 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{subcaption}
 \usepackage{enumitem}
+% Submission build: double spacing and line numbers, as the journal's
+% formatting guidelines ask. pdflatex "\def\submission{1}\input{main}"
+\usepackage{setspace}
+\usepackage{lineno}
+\ifdefined\submission\doublespacing\renewcommand\linenumberfont{\normalfont\scriptsize}\linenumbers\fi
 \providecommand{\ket}[1]{\left|#1\right\rangle}
 \providecommand{\bra}[1]{\left\langle#1\right|}
 
@@ -82,17 +87,11 @@ testing, backtest overfitting, deflated Sharpe ratio, reproducibility
 
 \section*{Declarations}
 
-\subsection*{Ethics approval and consent to participate}
-Not applicable.
-
-\subsection*{Consent for publication}
-Not applicable.
-
 \subsection*{Availability of data and materials}
 The JPX panel is the public competition dataset \citep{jpx2022competition} and
 is not redistributed here. The United States panel is reconstructed from public
-daily prices by the scripts released with this paper at
-\url{https://github.com/ChiShengChen/qtcnn-trained-frozen-absent}, which also
+daily prices by the scripts released with this paper in the GitHub repository
+\url{https://github.com/ChiShengChen/qtcnn-trained-frozen-absent}~\citep{chen2026repo}, which also
 contain the evaluation stack, the calibration tests, the per-cell results and
 daily return series behind every table and figure in this manuscript, the
 trained weights of the cells used for the shot-budget measurement, and the
@@ -105,7 +104,9 @@ competing interests.
 
 \subsection*{Funding}
 EJK acknowledges financial support from the National Science and Technology
-Council (NSTC) of Taiwan under Grant No.~NSTC~114-2112-M-A49-036-MY3.
+Council (NSTC) of Taiwan under Grant No.~NSTC~114-2112-M-A49-036-MY3. The
+funder had no role in the design of the study, the analysis, the decision to
+publish or the preparation of the manuscript.
 
 \subsection*{Authors' contributions}
 CSC designed the study, wrote the code, ran the experiments and drafted the
