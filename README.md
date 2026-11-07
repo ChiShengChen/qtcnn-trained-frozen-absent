@@ -2,7 +2,7 @@
 
 Code, results and manuscript for
 
-> C.-S. Chen and E.-J. Kuo, *Trained, Frozen, or Absent: Identifying What a
+> C.-S. Chen, X. Zhang, E.-J. Kuo, R. Fu, Q. Xie and F. Zhang, *Trained, Frozen, or Absent: Identifying What a
 > Quantum Layer Contributes to Cross-Sectional Equity Ranking* (2026).
 
 The study trains a hybrid quantum temporal convolutional network for daily
